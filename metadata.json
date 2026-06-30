@@ -1,0 +1,6 @@
+{
+  "name": "MI Cibungur I",
+  "description": "Website resmi Madrasah Ibtidaiyah (MI) Cibungur I, Kabupaten Bandung Barat. Portal pendaftaran PPDB ramah wali murid dan pemantauan kegiatan Islami siswa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "SchoolProfile": {
+      "title": "SchoolProfile",
+      "description": "Profil Madrasah Ibtidaiyah",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "principal": { "type": "string" },
+        "accreditation": { "type": "string" },
+        "vision": { "type": "string" }
+      }
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Kegiatan Madrasah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "image": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Pengumuman Madrasah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "isImportant": { "type": "boolean" }
+      }
+    },
+    "PPDBSubmission": {
+      "title": "PPDBSubmission",
+      "description": "Pendaftaran Siswa Baru",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "birthPlace": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "gender": { "type": "string" },
+        "parentName": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "school_profile": {
+      "schema": "SchoolProfile",
+      "description": "Koleksi profil sekolah"
+    },
+    "activities": {
+      "schema": "Activity",
+      "description": "Koleksi kegiatan sekolah"
+    },
+    "announcements": {
+      "schema": "Announcement",
+      "description": "Koleksi pengumuman sekolah"
+    },
+    "submissions": {
+      "schema": "PPDBSubmission",
+      "description": "Koleksi pendaftaran PPDB"
+    }
+  }
+}
