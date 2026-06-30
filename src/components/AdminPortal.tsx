@@ -21,20 +21,26 @@ import {
   Lock,
   Eye,
   EyeOff,
-  ShieldAlert
+  ShieldAlert,
+  GraduationCap,
+  Upload
 } from 'lucide-react';
-import { Activity, PPDBSubmission, Announcement, SchoolProfile } from '../types';
+import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher } from '../types';
 
 interface AdminPortalProps {
   activities: Activity[];
   submissions: PPDBSubmission[];
   announcements: Announcement[];
+  teachers: Teacher[];
   onAddActivity: (activity: Activity) => void;
   onDeleteActivity: (id: string) => void;
   onUpdateSubmissionStatus: (id: string, status: PPDBSubmission['status']) => void;
   onDeleteSubmission: (id: string) => void;
   onAddAnnouncement: (announcement: Announcement) => void;
   onDeleteAnnouncement?: (id: string) => void;
+  onAddTeacher: (teacher: Teacher) => void;
+  onUpdateTeacher: (teacher: Teacher) => void;
+  onDeleteTeacher: (id: string) => void;
   schoolProfile?: SchoolProfile;
   onUpdateSchoolProfile?: (profile: SchoolProfile) => void;
   firebaseStatus?: 'loading' | 'connected' | 'error';
@@ -50,22 +56,70 @@ const PRESET_IMAGES = [
   { id: 'pres-6', label: 'Rapat Organisasi OSIS', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800' },
 ];
 
+const compressImage = (file: File, maxWidth = 800, maxHeight = 1000, quality = 0.92): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        } catch (e) {
+          resolve(event.target?.result as string);
+        }
+      };
+      img.onerror = () => {
+        resolve(event.target?.result as string);
+      };
+    };
+    reader.onerror = () => {
+      resolve('');
+    };
+  });
+};
+
 export default function AdminPortal({
   activities,
   submissions,
   announcements,
+  teachers,
   onAddActivity,
   onDeleteActivity,
   onUpdateSubmissionStatus,
   onDeleteSubmission,
   onAddAnnouncement,
   onDeleteAnnouncement,
+  onAddTeacher,
+  onUpdateTeacher,
+  onDeleteTeacher,
   schoolProfile,
   onUpdateSchoolProfile,
   firebaseStatus,
   firebaseError
 }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil'>('kegiatan');
+  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru'>('kegiatan');
 
   // Secure Role-Based Gate State
   const [loginMode, setLoginMode] = useState<'guru' | 'admin'>('guru');
@@ -122,6 +176,95 @@ export default function AdminPortal({
     setPinError(null);
   };
 
+  // Teacher Form State & Handlers
+  const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
+  const [isUploadingTeacher, setIsUploadingTeacher] = useState(false);
+  const [teacherImageSource, setTeacherImageSource] = useState<'upload' | 'link'>('upload');
+  const [teacherForm, setTeacherForm] = useState<Omit<Teacher, 'id'>>({
+    name: '',
+    role: '',
+    photo: '',
+    education: '',
+    bio: '',
+    biography: '',
+    status: 'Aktif',
+    joinedYear: new Date().getFullYear().toString()
+  });
+
+  const handleTeacherPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingTeacher(true);
+      try {
+        const compressed = await compressImage(file, 800, 1000, 0.92);
+        setTeacherForm(prev => ({ ...prev, photo: compressed }));
+      } catch (err) {
+        console.error('Failed to compress teacher photo:', err);
+      } finally {
+        setIsUploadingTeacher(false);
+      }
+    }
+  };
+
+  const handleTeacherSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTeacherId) {
+      onUpdateTeacher({
+        id: editingTeacherId,
+        ...teacherForm
+      });
+      setEditingTeacherId(null);
+    } else {
+      onAddTeacher({
+        id: `guru-${Date.now()}`,
+        ...teacherForm
+      });
+    }
+    setTeacherForm({
+      name: '',
+      role: '',
+      photo: '',
+      education: '',
+      bio: '',
+      biography: '',
+      status: 'Aktif',
+      joinedYear: new Date().getFullYear().toString()
+    });
+  };
+
+  const handleStartEditTeacher = (teacher: Teacher) => {
+    setEditingTeacherId(teacher.id);
+    setTeacherForm({
+      name: teacher.name,
+      role: teacher.role,
+      photo: teacher.photo,
+      education: teacher.education,
+      bio: teacher.bio || '',
+      biography: teacher.biography || '',
+      status: teacher.status,
+      joinedYear: teacher.joinedYear || ''
+    });
+    if (teacher.photo && teacher.photo.startsWith('data:image')) {
+      setTeacherImageSource('upload');
+    } else {
+      setTeacherImageSource('link');
+    }
+  };
+
+  const handleCancelEditTeacher = () => {
+    setEditingTeacherId(null);
+    setTeacherForm({
+      name: '',
+      role: '',
+      photo: '',
+      education: '',
+      bio: '',
+      biography: '',
+      status: 'Aktif',
+      joinedYear: new Date().getFullYear().toString()
+    });
+  };
+
   // School Profile Form State
   const [profileForm, setProfileForm] = useState<SchoolProfile>(() => {
     return schoolProfile || {
@@ -129,6 +272,7 @@ export default function AdminPortal({
       schoolSlogan: '',
       headline: '',
       description: '',
+      logo: '',
       principalName: '',
       principalSpeech: '',
       principalAvatar: '',
@@ -150,6 +294,7 @@ export default function AdminPortal({
     };
   });
   const [profSuccess, setProfSuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Sync profile form state if schoolProfile prop updates
   React.useEffect(() => {
@@ -505,6 +650,22 @@ service cloud.firestore {
           <FileCheck className="h-4.5 w-4.5" />
           <span>Tulis Pengumuman</span>
         </button>
+        <button
+          onClick={() => setActiveTab('guru')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
+            activeTab === 'guru'
+              ? 'border-emerald-600 text-emerald-700 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <GraduationCap className="h-4.5 w-4.5 text-emerald-600" />
+          <span>Kelola Profil Guru</span>
+          {teachers.length > 0 && (
+            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
+              {teachers.length}
+            </span>
+          )}
+        </button>
         {userRole === 'admin' && (
           <button
             onClick={() => setActiveTab('profil')}
@@ -618,16 +779,59 @@ service cloud.firestore {
                     })}
                   </div>
 
-                  <div>
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Atau Gunakan Link URL Foto Custom</span>
-                    <input
-                      type="url"
-                      placeholder="Masukkan URL foto custom (https://...)"
-                      value={customImageURL}
-                      onChange={(e) => setCustomImageURL(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Upload Foto dari Perangkat</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setIsUploading(true);
+                              const base64 = await compressImage(file, 1200, 900, 0.90);
+                              setCustomImageURL(base64);
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setIsUploading(false);
+                            }
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1 bg-slate-50/50"
+                      />
+                      {isUploading && (
+                        <p className="text-[10px] text-emerald-600 mt-1 animate-pulse font-medium">Sedang memproses dan mengompres foto...</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Atau Gunakan Link URL Foto Custom</span>
+                      <input
+                        type="url"
+                        placeholder="Masukkan URL foto custom (https://...)"
+                        value={customImageURL.startsWith('data:') ? '' : customImageURL}
+                        onChange={(e) => setCustomImageURL(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      />
+                    </div>
                   </div>
+
+                  {customImageURL && (
+                    <div className="mt-3 flex items-center gap-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl">
+                      <div className="h-14 w-14 rounded-lg overflow-hidden border border-slate-200 shadow-sm shrink-0 bg-white">
+                        <img src={customImageURL} className="h-full w-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Pratinjau Foto Kegiatan</p>
+                        <p className="text-[10px] text-emerald-600 font-medium">
+                          {customImageURL.startsWith('data:') ? '✓ Terunggah langsung dari perangkat (Optimal)' : '✓ Menggunakan URL link eksternal'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -916,6 +1120,302 @@ service cloud.firestore {
           </>
         )}
 
+        {activeTab === 'guru' && (
+          <>
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left flex flex-col h-fit">
+              <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <GraduationCap className="h-5 w-5 text-emerald-600" />
+                <span>{editingTeacherId ? 'Edit Profil Guru' : 'Tambah Guru / Staf Baru'}</span>
+              </h3>
+
+              <form onSubmit={handleTeacherSubmit} className="space-y-4">
+                {/* Nama Lengkap */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Nama Lengkap & Gelar *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Ustadzah Siti Aminah, S.Pd."
+                    value={teacherForm.name}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                  />
+                </div>
+
+                {/* Jabatan / Peran */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Jabatan / Peran Pengajaran *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Guru Kelas I & Pembimbing Tahfidz"
+                    value={teacherForm.role}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, role: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                  />
+                </div>
+
+                {/* Riwayat Pendidikan */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Riwayat Pendidikan *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: S1 PGMI - UIN Sunan Gunung Djati Bandung"
+                    value={teacherForm.education}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, education: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                  />
+                </div>
+
+                 {/* Pesan Motivasi / Bio */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Pesan Pendidik & Motivasi
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Contoh: Mendidik dengan sabar dan ikhlas untuk mencetak hafizh Qur'an yang beradab mulia."
+                    value={teacherForm.bio}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, bio: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                  />
+                </div>
+
+                {/* Biografi Singkat */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Biografi Singkat Guru
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Contoh: Lahir di Bandung Barat, mengabdi sejak tahun 2018 dengan keahlian khusus di bidang tahfizh Al-Qur'an dan bimbingan karakter anak usia dasar."
+                    value={teacherForm.biography}
+                    onChange={(e) => setTeacherForm({ ...teacherForm, biography: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Tahun Mulai Bertugas */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Tahun Gabung
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: 2018"
+                      value={teacherForm.joinedYear}
+                      onChange={(e) => setTeacherForm({ ...teacherForm, joinedYear: e.target.value })}
+                      className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+
+                  {/* Status Keaktifan */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Status Keaktifan
+                    </label>
+                    <select
+                      value={teacherForm.status}
+                      onChange={(e) => setTeacherForm({ ...teacherForm, status: e.target.value })}
+                      className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    >
+                      <option value="Aktif">Aktif Mengajar</option>
+                      <option value="Cuti">Cuti / Non-Aktif</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Foto Upload & Preview */}
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Foto Guru (Upload langsung dari HP / Laptop)
+                  </label>
+                  
+                  {/* Image Source Toggle */}
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setTeacherImageSource('upload')}
+                      className={`flex-1 py-1 px-2 text-[10px] font-bold rounded-lg border transition-all ${
+                        teacherImageSource === 'upload'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 animate-pulse-once'
+                          : 'bg-white border-slate-200 text-slate-500'
+                      }`}
+                    >
+                      Upload File Foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTeacherImageSource('link')}
+                      className={`flex-1 py-1 px-2 text-[10px] font-bold rounded-lg border transition-all ${
+                        teacherImageSource === 'link'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-white border-slate-200 text-slate-500'
+                      }`}
+                    >
+                      Gunakan Link URL
+                    </button>
+                  </div>
+
+                  {teacherImageSource === 'upload' ? (
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                          <Upload className="h-6 w-6 text-slate-400 mb-2" />
+                          <p className="text-[10px] text-slate-500 font-semibold">
+                            Klik untuk upload foto guru
+                          </p>
+                          <p className="text-[9px] text-slate-400 mt-1">
+                            Format JPG/PNG, maksimal 2MB
+                          </p>
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleTeacherPhotoFileChange}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <input
+                      type="url"
+                      placeholder="Masukkan link gambar (https://...)"
+                      value={teacherForm.photo}
+                      onChange={(e) => setTeacherForm({ ...teacherForm, photo: e.target.value })}
+                      className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  )}
+
+                  {/* Foto Preview */}
+                  {teacherForm.photo && (
+                    <div className="mt-3 flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <img 
+                        src={teacherForm.photo} 
+                        alt="Preview Guru" 
+                        className="h-14 w-14 rounded-lg object-cover border border-slate-200 bg-white"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-grow">
+                        <p className="text-[10px] text-slate-400 font-medium">Pratinjau Foto Guru</p>
+                        <button
+                          type="button"
+                          onClick={() => setTeacherForm({ ...teacherForm, photo: '' })}
+                          className="text-[10px] text-red-500 hover:text-red-700 font-bold mt-1 block"
+                        >
+                          Hapus Foto
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="pt-4 flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={isUploadingTeacher}
+                    className="flex-1 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl shadow-md transition-all cursor-pointer text-center"
+                  >
+                    {isUploadingTeacher ? 'Mengompres...' : editingTeacherId ? 'Simpan Perubahan' : 'Tambahkan Guru'}
+                  </button>
+                  {editingTeacherId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditTeacher}
+                      className="px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* List / Directory on the Right */}
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left flex flex-col h-full">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-emerald-600" />
+                  <span>Daftar Guru & Staf ({teachers.length})</span>
+                </h3>
+                <span className="text-[10px] text-slate-400 font-medium">Pilih guru untuk mengedit data</span>
+              </div>
+
+              {teachers.length > 0 ? (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
+                  {teachers.map((teacher) => (
+                    <div 
+                      key={teacher.id} 
+                      className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-emerald-200 hover:bg-emerald-50/10 transition-all"
+                    >
+                      <div className="flex gap-3.5 items-center">
+                        <img 
+                          src={teacher.photo || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'} 
+                          alt={teacher.name} 
+                          className="h-12 w-12 rounded-full object-cover border border-slate-200 bg-white"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-extrabold text-xs text-slate-800 leading-tight">
+                              {teacher.name}
+                            </h4>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                              teacher.status === 'Aktif'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {teacher.status || 'Aktif'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-emerald-700 font-bold mt-1">
+                            {teacher.role}
+                          </p>
+                          <p className="text-[9px] text-slate-400 mt-0.5 line-clamp-1">
+                            Pendidikan: {teacher.education || '-'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 self-end sm:self-center">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditTeacher(teacher)}
+                          className="px-3 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg cursor-pointer border border-emerald-100"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteTeacher(teacher.id)}
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg cursor-pointer"
+                          title="Hapus Profil Guru"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-3">
+                  <Users className="h-8 w-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">Belum ada data guru terdaftar.</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {activeTab === 'profil' && userRole === 'admin' && (
           <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -981,6 +1481,75 @@ service cloud.firestore {
                     />
                   </div>
                 </div>
+
+                {/* Logo Madrasah Input & Direct Upload */}
+                <div className="bg-emerald-50/30 rounded-2xl border border-emerald-100/50 p-4 space-y-3">
+                  <h5 className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">Logo Madrasah</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Upload Logo dari Perangkat</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setIsUploading(true);
+                              const base64 = await compressImage(file, 600, 600, 0.95); // 600x600 for high sharpness
+                              setProfileForm({ ...profileForm, logo: base64 });
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setIsUploading(false);
+                            }
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Atau Gunakan Link URL Logo</span>
+                      <input
+                        type="url"
+                        placeholder="Masukkan URL logo (https://...)"
+                        value={profileForm.logo?.startsWith('data:') ? '' : (profileForm.logo || '')}
+                        onChange={(e) => setProfileForm({ ...profileForm, logo: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-14 w-14 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 bg-white flex items-center justify-center">
+                      {profileForm.logo ? (
+                        <img src={profileForm.logo} className="h-full w-full object-cover" alt="Logo Preview" referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="text-slate-300 text-[10px] text-center px-1">Default (Topi)</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Logo Madrasah Terpilih</p>
+                      <p className="text-[10px] text-slate-400">
+                        {profileForm.logo ? (
+                          profileForm.logo.startsWith('data:') ? 'Terunggah dari perangkat (Base64)' : 'Menggunakan link URL'
+                        ) : (
+                          'Menggunakan logo default (Topi Wisuda)'
+                        )}
+                      </p>
+                      {profileForm.logo && (
+                        <button
+                          type="button"
+                          onClick={() => setProfileForm({ ...profileForm, logo: '' })}
+                          className="text-[10px] font-semibold text-red-500 hover:text-red-700 mt-1 block hover:underline"
+                        >
+                          Hapus Logo & Gunakan Default
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Group 2: Sambutan Kepala Sekolah */}
@@ -988,7 +1557,7 @@ service cloud.firestore {
                 <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
                   2. Profil & Sambutan Kepala Sekolah
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-600 mb-1.5">Nama Lengkap Kepala Sekolah</label>
                     <input
@@ -1009,16 +1578,60 @@ service cloud.firestore {
                       className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Foto Profil Kepala Sekolah (URL Image)</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.principalAvatar}
-                      onChange={(e) => setProfileForm({ ...profileForm, principalAvatar: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
-                    />
+                </div>
+
+                {/* Foto Profil Kepala Sekolah - Input & Direct Upload */}
+                <div className="bg-emerald-50/30 rounded-2xl border border-emerald-100/50 p-4 space-y-3">
+                  <h5 className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">Foto Profil Kepala Sekolah</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Upload Foto dari Perangkat</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setIsUploading(true);
+                              const base64 = await compressImage(file, 800, 1000, 0.92); // Principal profile can be mid-size
+                              setProfileForm({ ...profileForm, principalAvatar: base64 });
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setIsUploading(false);
+                            }
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Atau Gunakan Link URL Foto</span>
+                      <input
+                        type="text"
+                        placeholder="Masukkan URL foto kepala sekolah (https://...)"
+                        value={profileForm.principalAvatar?.startsWith('data:') ? '' : (profileForm.principalAvatar || '')}
+                        onChange={(e) => setProfileForm({ ...profileForm, principalAvatar: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                    </div>
                   </div>
+
+                  {profileForm.principalAvatar && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-14 w-11 rounded-lg overflow-hidden border border-slate-200 shadow-sm shrink-0 bg-white">
+                        <img src={profileForm.principalAvatar} className="h-full w-full object-cover" alt="Principal Preview" referrerPolicy="no-referrer" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">Foto Kepala Sekolah Terpilih</p>
+                        <p className="text-[10px] text-emerald-600 font-medium">
+                          {profileForm.principalAvatar.startsWith('data:') ? '✓ Terunggah dari perangkat (Base64)' : '✓ Menggunakan link URL'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

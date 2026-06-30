@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Activity, Facility, Testimonial, Announcement, SchoolProfile } from './types';
+import { Activity, Facility, Testimonial, Announcement, SchoolProfile, Teacher } from './types';
 
 export const INITIAL_ACTIVITIES: Activity[] = [
   {
@@ -131,6 +131,7 @@ export const SCHOOL_STATS = {
 export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   schoolName: 'MI CIBUNGUR I',
   schoolSlogan: 'BANDUNG BARAT',
+  logo: '', // Empty means fallback to default GraduationCap icon
   headline: 'Membimbing Generasi Qur\'ani Berkarakter Sholeh, Cerdas & Mandiri',
   description: 'Selamat datang di MI Cibungur I, Kabupaten Bandung Barat. Kami mendidik anak dengan kasih sayang dan nilai-nilai luhur keagamaan demi masa depan yang berkah, berakhlak mulia, dan berbakti kepada orang tua.',
   principalName: 'Sopyan Cepi, S.Pd.I.',
@@ -153,4 +154,41 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   adminPin: '999888',
   guruPin: '123456'
 };
+
+export const INITIAL_TEACHERS: Teacher[] = [
+  {
+    id: 'guru-1',
+    name: 'Sopyan Cepi, S.Pd.I.',
+    role: 'Kepala Madrasah & Guru Akidah Akhlak',
+    photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=350&h=440',
+    education: 'S1 Pendidikan Agama Islam - UIN Sunan Gunung Djati Bandung',
+    bio: 'Bertekad mendidik tunas bangsa yang berakhlakul karimah, disiplin, dan cinta Al-Qur\'an.',
+    biography: 'Lahir di Bandung Barat, memiliki dedikasi lebih dari 10 tahun di dunia pendidikan Islam. Berpengalaman dalam pengelolaan kurikulum dan manajemen madrasah ibtidaiyah terpadu.',
+    status: 'Aktif',
+    joinedYear: '2015'
+  },
+  {
+    id: 'guru-2',
+    name: 'Ustadzah Siti Aminah, S.Pd.',
+    role: 'Guru Kelas I & Koordinator Tahfidz',
+    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=350',
+    education: 'S1 Pendidikan Guru Madrasah Ibtidaiyah - UIN Sunan Gunung Djati',
+    bio: 'Sangat senang membimbing siswa kelas awal membaca Al-Qur\'an dengan metode yang ceria dan sabar.',
+    biography: 'Fokus pada metode pengajaran menyenangkan (joyful learning) untuk anak usia emas, mengintegrasikan hafalan Al-Qur\'an juz 30 dengan pendidikan karakter yang bersahaja.',
+    status: 'Aktif',
+    joinedYear: '2018'
+  },
+  {
+    id: 'guru-3',
+    name: 'Ustadz Ahmad Fauzi, S.Ag.',
+    role: 'Guru Kelas V & Pembimbing Fiqih',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=350',
+    education: 'S1 Ushuluddin - UIN Sunan Gunung Djati Bandung',
+    bio: 'Menanamkan pemahaman ibadah harian sejak dini agar menjadi pembiasaan hidup yang kokoh.',
+    biography: 'Spesialis dalam fiqih amaliyah praktis untuk anak-anak sekolah dasar. Senang memadukan praktek langsung gerakan shalat dan wudhu yang benar dengan pembiasaan sopan santun.',
+    status: 'Aktif',
+    joinedYear: '2019'
+  }
+];
+
 

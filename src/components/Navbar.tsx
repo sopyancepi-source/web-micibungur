@@ -29,6 +29,7 @@ export default function Navbar({
   const navItems = [
     { id: 'beranda', label: 'Beranda' },
     { id: 'fasilitas', label: 'Fasilitas' },
+    { id: 'guru', label: 'Profil Guru' },
     { id: 'kegiatan', label: 'Kegiatan Siswa' },
     { id: 'ppdb', label: 'Pendaftaran PPDB' },
   ];
@@ -57,9 +58,20 @@ export default function Navbar({
             className="flex items-center gap-3 cursor-pointer group"
             id="nav-logo"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-900 text-amber-100 shadow-md shadow-emerald-900/10 group-hover:from-emerald-600 group-hover:to-emerald-800 transition-all duration-300 transform group-hover:scale-105 border border-emerald-500/20">
-              <GraduationCap className="h-6 w-6 text-amber-400" />
-            </div>
+            {schoolProfile?.logo ? (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-md shadow-emerald-900/10 border border-emerald-500/20 group-hover:scale-105 transition-all duration-300 overflow-hidden shrink-0">
+                <img 
+                  src={schoolProfile.logo} 
+                  alt="Logo Madrasah" 
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-900 text-amber-100 shadow-md shadow-emerald-900/10 group-hover:from-emerald-600 group-hover:to-emerald-800 transition-all duration-300 transform group-hover:scale-105 border border-emerald-500/20">
+                <GraduationCap className="h-6 w-6 text-amber-400" />
+              </div>
+            )}
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-slate-900 group-hover:text-emerald-800 transition-colors leading-none font-sans">
                 {schoolProfile?.schoolName || 'MI CIBUNGUR I'}

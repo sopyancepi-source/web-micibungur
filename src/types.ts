@@ -56,6 +56,7 @@ export interface SchoolProfile {
   schoolSlogan: string;
   headline: string;
   description: string;
+  logo?: string; // Custom Base64 or URL logo
   principalName: string;
   principalSpeech: string;
   principalAvatar: string;
@@ -76,4 +77,17 @@ export interface SchoolProfile {
   adminPin?: string;
   guruPin?: string;
 }
+
+export interface Teacher {
+  id: string;
+  name: string;
+  role: string; // e.g., "Guru Kelas V", "Guru Mata Pelajaran Al-Qur'an Hadits"
+  photo: string; // Base64 or URL
+  education: string; // e.g., "S1 Pendidikan Guru MI - UIN Sunan Gunung Djati"
+  bio?: string; // a brief biography/message
+  biography?: string; // custom short biography of the teacher
+  status: 'Aktif' | 'Cuti' | string;
+  joinedYear?: string;
+}
+
 

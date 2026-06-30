@@ -31,6 +31,7 @@ import VirtualTour from './components/VirtualTour';
 import StatsSection from './components/StatsSection';
 import TestimonialsSection from './components/TestimonialsSection';
 import ActivitiesShowcase from './components/ActivitiesShowcase';
+import TeacherProfile from './components/TeacherProfile';
 
 import { db } from './lib/firebase';
 import { 
@@ -43,13 +44,14 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 
-import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile } from './types';
+import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher } from './types';
 import { 
   INITIAL_ACTIVITIES, 
   INITIAL_FACILITIES, 
   INITIAL_TESTIMONIALS, 
   INITIAL_ANNOUNCEMENTS,
-  DEFAULT_SCHOOL_PROFILE
+  DEFAULT_SCHOOL_PROFILE,
+  INITIAL_TEACHERS
 } from './data';
 
 export default function App() {
@@ -86,6 +88,11 @@ export default function App() {
       }
     }
     return DEFAULT_SCHOOL_PROFILE;
+  });
+
+  const [teachers, setTeachers] = useState<Teacher[]>(() => {
+    const saved = localStorage.getItem('school_teachers');
+    return saved ? JSON.parse(saved) : INITIAL_TEACHERS;
   });
 
   // Try to load and seed Firebase on Mount
@@ -145,6 +152,21 @@ export default function App() {
           setSubmissions([]);
         }
 
+        // 5. Fetch teachers
+        const teachersCol = collection(db, 'teachers');
+        const teachersSnap = await getDocs(teachersCol);
+        let activeTeachers: Teacher[] = [];
+        if (!teachersSnap.empty) {
+          activeTeachers = teachersSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Teacher[];
+          setTeachers(activeTeachers);
+        } else {
+          // Seed teachers
+          for (const teacher of INITIAL_TEACHERS) {
+            await setDoc(doc(db, 'teachers', teacher.id), teacher);
+          }
+          setTeachers(INITIAL_TEACHERS);
+        }
+
         setFirebaseStatus('connected');
         setFirebaseError(null);
       } catch (err: any) {
@@ -173,6 +195,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_announcements', JSON.stringify(announcements));
   }, [announcements]);
+
+  useEffect(() => {
+    localStorage.setItem('school_teachers', JSON.stringify(teachers));
+  }, [teachers]);
 
   // Fallback for deactivated audience tracks
   useEffect(() => {
@@ -279,6 +305,39 @@ export default function App() {
         await deleteDoc(doc(db, 'announcements', id));
       } catch (err) {
         console.error('Error deleting announcement from Firebase:', err);
+      }
+    }
+  };
+
+  const handleAddTeacher = async (newTeacher: Teacher) => {
+    setTeachers([newTeacher, ...teachers]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'teachers', newTeacher.id), newTeacher);
+      } catch (err) {
+        console.error('Error writing teacher to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateTeacher = async (updatedTeacher: Teacher) => {
+    setTeachers(teachers.map(t => t.id === updatedTeacher.id ? updatedTeacher : t));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'teachers', updatedTeacher.id), updatedTeacher);
+      } catch (err) {
+        console.error('Error updating teacher in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteTeacher = async (id: string) => {
+    setTeachers(teachers.filter(t => t.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'teachers', id));
+      } catch (err) {
+        console.error('Error deleting teacher from Firebase:', err);
       }
     }
   };
@@ -841,6 +900,11 @@ export default function App() {
           <VirtualTour facilities={INITIAL_FACILITIES} />
         )}
 
+        {/* VIEW: PROFIL GURU */}
+        {currentView === 'guru' && (
+          <TeacherProfile teachers={teachers} />
+        )}
+
         {/* VIEW 3: KEGIATAN SISWA */}
         {currentView === 'kegiatan' && (
           <ActivitiesShowcase activities={activities} setView={setView} />
@@ -857,12 +921,16 @@ export default function App() {
             activities={activities}
             submissions={submissions}
             announcements={announcements}
+            teachers={teachers}
             onAddActivity={handleAddActivity}
             onDeleteActivity={handleDeleteActivity}
             onUpdateSubmissionStatus={handleUpdateSubmissionStatus}
             onDeleteSubmission={handleDeleteSubmission}
             onAddAnnouncement={handleAddAnnouncement}
             onDeleteAnnouncement={handleDeleteAnnouncement}
+            onAddTeacher={handleAddTeacher}
+            onUpdateTeacher={handleUpdateTeacher}
+            onDeleteTeacher={handleDeleteTeacher}
             schoolProfile={schoolProfile}
             onUpdateSchoolProfile={handleUpdateSchoolProfile}
             firebaseStatus={firebaseStatus}
@@ -879,8 +947,19 @@ export default function App() {
             
             {/* School Profile Column */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-white">
-                <GraduationCap className="h-6 w-6 text-emerald-500" />
+              <div className="flex items-center gap-3 text-white">
+                {schoolProfile.logo ? (
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white border border-slate-700 overflow-hidden shrink-0">
+                    <img 
+                      src={schoolProfile.logo} 
+                      alt="Logo" 
+                      className="h-full w-full object-cover" 
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <GraduationCap className="h-6 w-6 text-emerald-500" />
+                )}
                 <span className="font-extrabold text-sm tracking-tight">{schoolProfile.schoolName}</span>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed">
