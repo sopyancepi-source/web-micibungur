@@ -32,6 +32,7 @@ import StatsSection from './components/StatsSection';
 import TestimonialsSection from './components/TestimonialsSection';
 import ActivitiesShowcase from './components/ActivitiesShowcase';
 import TeacherProfile from './components/TeacherProfile';
+import SekilasMadrasah from './components/SekilasMadrasah';
 
 import { db } from './lib/firebase';
 import { 
@@ -44,14 +45,15 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 
-import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher, Facility } from './types';
+import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher, Facility, HistoricalFigure } from './types';
 import { 
   INITIAL_ACTIVITIES, 
   INITIAL_FACILITIES, 
   INITIAL_TESTIMONIALS, 
   INITIAL_ANNOUNCEMENTS,
   DEFAULT_SCHOOL_PROFILE,
-  INITIAL_TEACHERS
+  INITIAL_TEACHERS,
+  INITIAL_HISTORICAL_FIGURES
 } from './data';
 
 export default function App() {
@@ -103,6 +105,11 @@ export default function App() {
   const [facilities, setFacilities] = useState<Facility[]>(() => {
     const saved = localStorage.getItem('school_facilities');
     return saved ? JSON.parse(saved) : INITIAL_FACILITIES;
+  });
+
+  const [historicalFigures, setHistoricalFigures] = useState<HistoricalFigure[]>(() => {
+    const saved = localStorage.getItem('school_historical_figures');
+    return saved ? JSON.parse(saved) : INITIAL_HISTORICAL_FIGURES;
   });
 
   // Try to load and seed Firebase on Mount
@@ -207,6 +214,21 @@ export default function App() {
           setFacilities(INITIAL_FACILITIES);
         }
 
+        // 8. Fetch historical figures (founders / retired teachers)
+        const historicalCol = collection(db, 'historical_figures');
+        const historicalSnap = await getDocs(historicalCol);
+        let activeHistorical: HistoricalFigure[] = [];
+        if (!historicalSnap.empty) {
+          activeHistorical = historicalSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as HistoricalFigure[];
+          setHistoricalFigures(activeHistorical);
+        } else {
+          // Seed historical figures
+          for (const hf of INITIAL_HISTORICAL_FIGURES) {
+            await setDoc(doc(db, 'historical_figures', hf.id), hf);
+          }
+          setHistoricalFigures(INITIAL_HISTORICAL_FIGURES);
+        }
+
         setFirebaseStatus('connected');
         setFirebaseError(null);
       } catch (err: any) {
@@ -247,6 +269,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_facilities', JSON.stringify(facilities));
   }, [facilities]);
+
+  useEffect(() => {
+    localStorage.setItem('school_historical_figures', JSON.stringify(historicalFigures));
+  }, [historicalFigures]);
 
   // Fallback for deactivated audience tracks
   useEffect(() => {
@@ -399,6 +425,39 @@ export default function App() {
         await deleteDoc(doc(db, 'teachers', id));
       } catch (err) {
         console.error('Error deleting teacher from Firebase:', err);
+      }
+    }
+  };
+
+  const handleAddHistoricalFigure = async (newFigure: HistoricalFigure) => {
+    setHistoricalFigures([newFigure, ...historicalFigures]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'historical_figures', newFigure.id), newFigure);
+      } catch (err) {
+        console.error('Error writing historical figure to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateHistoricalFigure = async (updatedFigure: HistoricalFigure) => {
+    setHistoricalFigures(historicalFigures.map(f => f.id === updatedFigure.id ? updatedFigure : f));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'historical_figures', updatedFigure.id), updatedFigure);
+      } catch (err) {
+        console.error('Error updating historical figure in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteHistoricalFigure = async (id: string) => {
+    setHistoricalFigures(historicalFigures.filter(f => f.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'historical_figures', id));
+      } catch (err) {
+        console.error('Error deleting historical figure from Firebase:', err);
       }
     }
   };
@@ -1053,6 +1112,11 @@ export default function App() {
           </div>
         )}
 
+        {/* VIEW: SEKILAS / SELAYANG PANDANG */}
+        {currentView === 'sekilas' && (
+          <SekilasMadrasah schoolProfile={schoolProfile} historicalFigures={historicalFigures} />
+        )}
+
         {/* VIEW 2: FASILITAS / VIRTUAL TOUR */}
         {currentView === 'fasilitas' && (
           <VirtualTour facilities={facilities} />
@@ -1092,6 +1156,10 @@ export default function App() {
             onAddTeacher={handleAddTeacher}
             onUpdateTeacher={handleUpdateTeacher}
             onDeleteTeacher={handleDeleteTeacher}
+            historicalFigures={historicalFigures}
+            onAddHistoricalFigure={handleAddHistoricalFigure}
+            onUpdateHistoricalFigure={handleUpdateHistoricalFigure}
+            onDeleteHistoricalFigure={handleDeleteHistoricalFigure}
             onAddTestimonial={handleAddTestimonial}
             onUpdateTestimonial={handleUpdateTestimonial}
             onDeleteTestimonial={handleDeleteTestimonial}

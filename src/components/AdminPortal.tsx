@@ -27,9 +27,10 @@ import {
   ArrowUp,
   ArrowDown,
   Building,
-  Edit2
+  Edit2,
+  Star
 } from 'lucide-react';
-import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher, Testimonial, Facility } from '../types';
+import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher, Testimonial, Facility, HistoricalFigure } from '../types';
 
 interface AdminPortalProps {
   activities: Activity[];
@@ -38,6 +39,7 @@ interface AdminPortalProps {
   teachers: Teacher[];
   testimonials: Testimonial[];
   facilities: Facility[];
+  historicalFigures?: HistoricalFigure[];
   onAddActivity: (activity: Activity) => void;
   onDeleteActivity: (id: string) => void;
   onUpdateSubmissionStatus: (id: string, status: PPDBSubmission['status']) => void;
@@ -48,6 +50,9 @@ interface AdminPortalProps {
   onAddTeacher: (teacher: Teacher) => void;
   onUpdateTeacher: (teacher: Teacher) => void;
   onDeleteTeacher: (id: string) => void;
+  onAddHistoricalFigure: (figure: HistoricalFigure) => void;
+  onUpdateHistoricalFigure: (figure: HistoricalFigure) => void;
+  onDeleteHistoricalFigure: (id: string) => void;
   onAddTestimonial: (testimonial: Testimonial) => void;
   onUpdateTestimonial: (testimonial: Testimonial) => void;
   onDeleteTestimonial: (id: string) => void;
@@ -137,6 +142,7 @@ export default function AdminPortal({
   teachers,
   testimonials,
   facilities,
+  historicalFigures = [],
   onAddActivity,
   onDeleteActivity,
   onUpdateSubmissionStatus,
@@ -147,6 +153,9 @@ export default function AdminPortal({
   onAddTeacher,
   onUpdateTeacher,
   onDeleteTeacher,
+  onAddHistoricalFigure,
+  onUpdateHistoricalFigure,
+  onDeleteHistoricalFigure,
   onAddTestimonial,
   onUpdateTestimonial,
   onDeleteTestimonial,
@@ -158,7 +167,7 @@ export default function AdminPortal({
   firebaseStatus,
   firebaseError
 }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru' | 'testimoni' | 'fasilitas'>('kegiatan');
+  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru' | 'testimoni' | 'fasilitas' | 'tokoh'>('kegiatan');
 
   // Parse custom grades list
   const gradesList = schoolProfile?.ppdbGrades
@@ -176,7 +185,7 @@ export default function AdminPortal({
   const [showPin, setShowPin] = useState(false);
 
   React.useEffect(() => {
-    if (userRole !== 'admin' && (activeTab === 'testimoni' || activeTab === 'profil')) {
+    if (userRole !== 'admin' && (activeTab === 'testimoni' || activeTab === 'profil' || activeTab === 'tokoh')) {
       setActiveTab('kegiatan');
     }
   }, [userRole, activeTab]);
@@ -224,6 +233,89 @@ export default function AdminPortal({
     setInputPin('');
     setInputEmail('');
     setPinError(null);
+  };
+
+  // Historical Figures State & Handlers
+  const [editingHistoricalFigureId, setEditingHistoricalFigureId] = useState<string | null>(null);
+  const [isUploadingHistoricalFigure, setIsUploadingHistoricalFigure] = useState(false);
+  const [historicalFigureImageSource, setHistoricalFigureImageSource] = useState<'upload' | 'link'>('upload');
+  const [historicalFigureForm, setHistoricalFigureForm] = useState<Omit<HistoricalFigure, 'id'>>({
+    name: '',
+    role: 'pendiri',
+    period: '',
+    photo: '',
+    bio: '',
+    order: undefined
+  });
+
+  const handleHistoricalFigurePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingHistoricalFigure(true);
+      try {
+        const compressed = await compressImage(file, 800, 1000, 0.92);
+        setHistoricalFigureForm(prev => ({ ...prev, photo: compressed }));
+      } catch (err) {
+        console.error('Failed to compress historical figure photo:', err);
+      } finally {
+        setIsUploadingHistoricalFigure(false);
+      }
+    }
+  };
+
+  const handleHistoricalFigureSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingHistoricalFigureId) {
+      onUpdateHistoricalFigure({
+        id: editingHistoricalFigureId,
+        ...historicalFigureForm,
+        order: historicalFigureForm.order !== undefined ? Number(historicalFigureForm.order) : undefined
+      });
+      setEditingHistoricalFigureId(null);
+    } else {
+      onAddHistoricalFigure({
+        id: `tokoh-${Date.now()}`,
+        ...historicalFigureForm,
+        order: historicalFigureForm.order !== undefined ? Number(historicalFigureForm.order) : (historicalFigures?.length || 0) + 1
+      });
+    }
+    setHistoricalFigureForm({
+      name: '',
+      role: 'pendiri',
+      period: '',
+      photo: '',
+      bio: '',
+      order: undefined
+    });
+  };
+
+  const handleStartEditHistoricalFigure = (figure: HistoricalFigure) => {
+    setEditingHistoricalFigureId(figure.id);
+    setHistoricalFigureForm({
+      name: figure.name,
+      role: figure.role,
+      period: figure.period,
+      photo: figure.photo,
+      bio: figure.bio || '',
+      order: figure.order
+    });
+    if (figure.photo && figure.photo.startsWith('data:image')) {
+      setHistoricalFigureImageSource('upload');
+    } else {
+      setHistoricalFigureImageSource('link');
+    }
+  };
+
+  const handleCancelEditHistoricalFigure = () => {
+    setEditingHistoricalFigureId(null);
+    setHistoricalFigureForm({
+      name: '',
+      role: 'pendiri',
+      period: '',
+      photo: '',
+      bio: '',
+      order: undefined
+    });
   };
 
   // Teacher Form State & Handlers
@@ -1047,6 +1139,31 @@ service cloud.firestore {
                     : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
                 }`}>
                   {testimonials.length}
+                </span>
+              )}
+            </button>
+          )}
+
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setActiveTab('tokoh')}
+              className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+                activeTab === 'tokoh'
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-500 shadow-amber-600/20 shadow-md scale-[1.02]'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-amber-700 hover:border-amber-200 hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Star className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'tokoh' ? 'text-white' : 'text-amber-600'}`} />
+                <span className="truncate">Pendiri & Purna Guru</span>
+              </div>
+              {historicalFigures.length > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
+                  activeTab === 'tokoh'
+                    ? 'bg-white/20 text-white border-white/10'
+                    : 'bg-amber-50 text-amber-800 border-amber-100/50'
+                }`}>
+                  {historicalFigures.length}
                 </span>
               )}
             </button>
@@ -2556,6 +2673,246 @@ service cloud.firestore {
           </>
         )}
 
+        {activeTab === 'tokoh' && userRole === 'admin' && (
+          <>
+            {/* Header */}
+            <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left mb-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2 border-b border-slate-100 pb-3 font-sans">
+                <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                Kelola Pendiri & Guru Purna Bakti
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Halaman ini digunakan untuk mengelola daftar perintis/pendiri madrasah serta guru-guru yang telah purna khidmat (pensiun). Data ini akan ditampilkan di halaman Selayang Pandang (Sekilas) sebagai bentuk penghormatan dan pengingat pengabdian mulia mereka.
+              </p>
+            </div>
+
+            {/* Left: Form, Right: List */}
+            <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left h-fit">
+              <h4 className="font-extrabold text-xs text-emerald-800 uppercase tracking-wider mb-4 border-l-4 border-emerald-500 pl-2">
+                {editingHistoricalFigureId ? 'Edit Tokoh Kehormatan' : 'Tambah Tokoh Baru'}
+              </h4>
+
+              <form onSubmit={handleHistoricalFigureSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nama Lengkap & Gelar</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: K.H. Ahmad Syahroni"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800"
+                    value={historicalFigureForm.name}
+                    onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, name: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kategori Tokoh</label>
+                  <select
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-semibold text-slate-800 bg-white"
+                    value={historicalFigureForm.role}
+                    onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, role: e.target.value })}
+                  >
+                    <option value="pendiri">Pendiri / Perintis Madrasah</option>
+                    <option value="purna">Guru Purna Bakti (Pensiun)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Masa Pengabdian / Khidmat</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Masa Khidmat: 1996 - 2024 atau Tahun 1994"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800"
+                    value={historicalFigureForm.period}
+                    onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, period: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Pesan Dedikasi / Biografi Singkat</label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Tuliskan cerita singkat pengabdian, jasa-jasa beliau, atau pesan inspiratif tokoh ini..."
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800 leading-relaxed"
+                    value={historicalFigureForm.bio}
+                    onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, bio: e.target.value })}
+                  />
+                </div>
+
+                {/* Photo Upload / Link Toggle */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Sumber Foto Tokoh</label>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-50 border border-slate-100 rounded-xl mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setHistoricalFigureImageSource('upload')}
+                      className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        historicalFigureImageSource === 'upload'
+                          ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Unggah File Foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHistoricalFigureImageSource('link')}
+                      className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        historicalFigureImageSource === 'link'
+                          ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Alamat Link Foto
+                    </button>
+                  </div>
+
+                  {historicalFigureImageSource === 'upload' ? (
+                    <div className="relative border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50 text-center hover:bg-slate-100/50 transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={handleHistoricalFigurePhotoFileChange}
+                      />
+                      <Upload className="h-5 w-5 text-slate-400 mx-auto mb-1.5" />
+                      <span className="block text-[10px] font-semibold text-slate-600">
+                        {isUploadingHistoricalFigure ? 'Sedang Mengompres...' : 'Pilih file foto dari perangkat'}
+                      </span>
+                      <span className="block text-[9px] text-slate-400 mt-0.5">Format JPG/PNG, ukuran proporsional</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="url"
+                      placeholder="Masukkan alamat URL foto lengkap..."
+                      className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800"
+                      value={historicalFigureForm.photo}
+                      onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, photo: e.target.value })}
+                    />
+                  )}
+
+                  {historicalFigureForm.photo && (
+                    <div className="mt-3 p-2 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <img 
+                          src={historicalFigureForm.photo} 
+                          alt="Pratinjau" 
+                          className="h-9 w-9 rounded-lg object-cover bg-slate-200 border border-slate-200"
+                          referrerPolicy="no-referrer"
+                        />
+                        <span className="text-[10px] text-emerald-800 font-bold">Foto Siap Dipasang</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHistoricalFigureForm({ ...historicalFigureForm, photo: '' })}
+                        className="text-[10px] font-bold text-red-600 hover:text-red-500 cursor-pointer p-1"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">No. Urut Tampilan (Opsional)</label>
+                  <input
+                    type="number"
+                    placeholder="Contoh: 1, 2, 3"
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-800"
+                    value={historicalFigureForm.order !== undefined ? historicalFigureForm.order : ''}
+                    onChange={(e) => setHistoricalFigureForm({ ...historicalFigureForm, order: e.target.value ? Number(e.target.value) : undefined })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-slate-100 mt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer text-center"
+                  >
+                    {editingHistoricalFigureId ? 'Simpan Perubahan' : 'Tambah Tokoh'}
+                  </button>
+                  {editingHistoricalFigureId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditHistoricalFigure}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* Right: List of historical figures */}
+            <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left">
+              <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-amber-500 pl-2 flex items-center gap-2">
+                <span>Daftar Tokoh Terdaftar ({historicalFigures.length})</span>
+              </h4>
+
+              {historicalFigures.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {historicalFigures.map((fig) => (
+                    <div key={fig.id} className="border border-slate-100 rounded-2xl p-4 hover:border-amber-100 hover:shadow-sm transition-all duration-300 flex gap-4">
+                      <div className="h-20 w-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0">
+                        <img 
+                          src={fig.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'} 
+                          alt={fig.name} 
+                          className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h5 className="font-bold text-xs text-slate-950 leading-tight">{fig.name}</h5>
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                              fig.role === 'pendiri' 
+                                ? 'bg-amber-100 text-amber-800' 
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              {fig.role === 'pendiri' ? 'Pendiri' : 'Purna'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-bold text-amber-700 mt-1">{fig.period}</p>
+                          {fig.bio && <p className="text-[10px] text-slate-500 mt-1.5 line-clamp-2 italic leading-relaxed">"{fig.bio}"</p>}
+                        </div>
+
+                        <div className="flex gap-2 border-t border-slate-50 pt-2.5 mt-2">
+                          <button
+                            onClick={() => handleStartEditHistoricalFigure(fig)}
+                            className="flex-1 bg-slate-50 hover:bg-amber-50 hover:text-amber-800 text-slate-600 text-[10px] font-bold py-1.5 rounded-lg transition-all cursor-pointer text-center border border-slate-100 hover:border-amber-100"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Hapus tokoh "${fig.name}"?`)) {
+                                onDeleteHistoricalFigure(fig.id);
+                              }
+                            }}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-all cursor-pointer"
+                            title="Hapus Tokoh"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-3">
+                  <Star className="h-8 w-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">Belum ada tokoh sejarah terdaftar.</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {activeTab === 'profil' && userRole === 'admin' && (
           <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -2802,6 +3159,94 @@ service cloud.firestore {
                       placeholder="Contoh: KKG Kabupaten Bandung Barat"
                       value={profileForm.principalSubtext || ''}
                       onChange={(e) => setProfileForm({ ...profileForm, principalSubtext: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 2B: Selayang Pandang & Sekilas Madrasah */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  2B. Selayang Pandang (Sekilas Madrasah)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Utama Selayang Pandang</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Selayang Pandang MI Cibungur I"
+                      value={profileForm.sekilasTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasTitle: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Sub-Judul / Deskripsi Pelengkap</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Mengenal Sejarah, Visi Misi, dan Nilai Dasar Perjuangan Madrasah"
+                      value={profileForm.sekilasSubtitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasSubtitle: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Sejarah & Rekam Jejak Madrasah</label>
+                    <textarea
+                      rows={5}
+                      placeholder="Tuliskan latar belakang berdirinya madrasah, perjuangan awal, perkembangan fisik bangunan, dan akreditasi saat ini..."
+                      value={profileForm.sekilasHistory || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasHistory: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Visi Utama Madrasah</label>
+                    <textarea
+                      rows={4}
+                      placeholder="Tuliskan visi sekolah (Cita-cita mulia berjangka panjang)..."
+                      value={profileForm.sekilasVisi || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasVisi: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Misi Perjuangan Madrasah (Tulis tiap poin di baris baru)</label>
+                    <textarea
+                      rows={4}
+                      placeholder="Contoh:&#10;1. Menyelenggarakan proses pembelajaran Qur'ani&#10;2. Membiasakan shalat dhuha & berjamaah&#10;3. Menanamkan adab kesopanan luhur"
+                      value={profileForm.sekilasMisi || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasMisi: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Falsafah / Budaya Pendidikan</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Falsafah Pendidikan 'Panca Khidmat'"
+                      value={profileForm.sekilasNilaiTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasNilaiTitle: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Deskripsi Singkat Falsafah Perjuangan</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Segenap tenaga pendidik berkhidmat atas keikhlasan, kasih sayang, kesabaran..."
+                      value={profileForm.sekilasNilaiDesc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, sekilasNilaiDesc: e.target.value })}
                       className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
                     />
                   </div>

@@ -28,6 +28,7 @@ export default function Navbar({
 
   const navItems = [
     { id: 'beranda', label: 'Beranda' },
+    { id: 'sekilas', label: 'Sekilas' },
     { id: 'fasilitas', label: 'Fasilitas' },
     { id: 'guru', label: 'Profil Guru' },
     { id: 'kegiatan', label: 'Kegiatan Siswa' },

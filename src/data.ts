@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Activity, Facility, Testimonial, Announcement, SchoolProfile, Teacher } from './types';
+import { Activity, Facility, Testimonial, Announcement, SchoolProfile, Teacher, HistoricalFigure } from './types';
 
 export const INITIAL_ACTIVITIES: Activity[] = [
   {
@@ -270,7 +270,16 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
 
   ppdbSch4Title: 'Subsidi Khusus Saudara Kandung',
   ppdbSch4Discount: 'Diskon Daftar 25%',
-  ppdbSch4Benefit: 'Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.'
+  ppdbSch4Benefit: 'Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.',
+
+  // Sekilas Madrasah / Selayang Pandang
+  sekilasTitle: 'Selayang Pandang MI Cibungur I',
+  sekilasSubtitle: 'Mengenal Sejarah, Visi Misi, dan Nilai Dasar Perjuangan Madrasah Kami',
+  sekilasHistory: 'MI Cibungur I didirikan sebagai bentuk kepedulian tokoh masyarakat setempat terhadap pendidikan agama Islam anak-anak usia dini di wilayah Cibungur, Kabupaten Bandung Barat. Bermula dari bangunan sederhana dengan fasilitas yang serba terbatas, madrasah ini terus berkembang berkat keikhlasan para guru dan gotong royong warga madrasah.\n\nHari ini, MI Cibungur I telah bertransformasi menjadi lembaga pendidikan formal berciri khas Islam terakreditasi A yang mengedepankan kualitas adab kesopanan, pembiasaan ibadah praktis harian, dan hafalan Al-Qur\'an Juz 30 (Juz Amma). Kami bertekad untuk menjadi madrasah ramah anak yang mendidik dengan kesabaran serta kasih sayang penuh.',
+  sekilasVisi: 'Terwujudnya madrasah yang unggul dalam melahirkan generasi Qur\'ani yang sholeh secara akhlak, cerdas secara akal, dan mandiri secara kepribadian.',
+  sekilasMisi: '1. Menyelenggarakan proses pembelajaran yang memadukan kurikulum nasional dengan kurikulum keagamaan secara seimbang dan berkualitas.\n2. Membiasakan pengamalan ibadah praktis harian seperti shalat berjamaah, shalat dhuha, tadarus Al-Qur\'an, dan hafalan Juz Amma secara konsisten.\n3. Menanamkan adab kesopanan, rasa hormat kepada orang tua, guru, serta sesama makhluk hidup.\n4. Membina potensi keilmuan, seni, dan olahraga anak secara sabar sesuai dengan keunikan minat bakat mereka.',
+  sekilasNilaiTitle: 'Falsafah Pendidikan "Panca Khidmat"',
+  sekilasNilaiDesc: 'Segenap tenaga pendidik dan kependidikan di MI Cibungur I berkhidmat atas 5 prinsip dasar: Keikhlasan dalam mengajar, Kasih sayang dalam membimbing, Kesabaran dalam mendidik, Keteladanan dalam beribadah, serta Kejujuran dalam bertindak.'
 };
 
 export const INITIAL_TEACHERS: Teacher[] = [
@@ -309,6 +318,27 @@ export const INITIAL_TEACHERS: Teacher[] = [
     status: 'Aktif',
     joinedYear: '2019',
     order: 3
+  }
+];
+
+export const INITIAL_HISTORICAL_FIGURES: HistoricalFigure[] = [
+  {
+    id: 'tokoh-1',
+    name: 'K.H. Ahmad Syahroni',
+    role: 'pendiri',
+    period: 'Mendirikan Madrasah (Tahun 1994)',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300&h=300',
+    bio: 'Tokoh ulama karismatik setempat yang mewakafkan tanahnya demi pembangunan gedung utama MI Cibungur I agar anak-anak desa tidak perlu berjalan jauh untuk belajar ilmu agama.',
+    order: 1
+  },
+  {
+    id: 'tokoh-2',
+    name: 'Ibu Hj. Fatimah, S.Pd.I.',
+    role: 'purna',
+    period: 'Masa Khidmat: 1996 - 2024',
+    photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300&h=300',
+    bio: 'Mengabdi selama 28 tahun sebagai guru kelas awal dengan kesabaran luar biasa. Beliau merupakan teladan kedisiplinan dan kasih sayang keibuan yang membekas di hati ribuan alumni.',
+    order: 2
   }
 ];
 

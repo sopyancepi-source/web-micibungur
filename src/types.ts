@@ -197,6 +197,15 @@ export interface SchoolProfile {
   ppdbSch4Title?: string;
   ppdbSch4Discount?: string;
   ppdbSch4Benefit?: string;
+
+  // Sekilas Madrasah / Selayang Pandang
+  sekilasTitle?: string;
+  sekilasSubtitle?: string;
+  sekilasHistory?: string;
+  sekilasVisi?: string;
+  sekilasMisi?: string;
+  sekilasNilaiTitle?: string;
+  sekilasNilaiDesc?: string;
 }
 
 export interface Teacher {
@@ -210,6 +219,16 @@ export interface Teacher {
   status: 'Aktif' | 'Cuti' | string;
   joinedYear?: string;
   order?: number; // Sorting/layout order for the teacher profiles
+}
+
+export interface HistoricalFigure {
+  id: string;
+  name: string;
+  role: 'pendiri' | 'purna' | string; // 'pendiri' = Pendiri Madrasah, 'purna' = Guru Purna Bakti
+  period: string; // e.g. "Masa Khidmat: 1994 - 2012"
+  photo: string; // Base64 or URL
+  bio?: string; // Short biography or message
+  order?: number; // Sorting/layout order
 }
 
 
