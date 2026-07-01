@@ -175,6 +175,12 @@ export default function AdminPortal({
   const [pinError, setPinError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
 
+  React.useEffect(() => {
+    if (userRole !== 'admin' && (activeTab === 'testimoni' || activeTab === 'profil')) {
+      setActiveTab('kegiatan');
+    }
+  }, [userRole, activeTab]);
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = inputEmail.trim().toLowerCase();
@@ -949,106 +955,140 @@ service cloud.firestore {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-slate-200 mb-8 overflow-x-auto gap-2 scrollbar-none">
-        <button
-          onClick={() => setActiveTab('kegiatan')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'kegiatan'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <PlusCircle className="h-4.5 w-4.5" />
-          <span>Upload Kegiatan Siswa</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('pendaftar')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'pendaftar'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Users className="h-4.5 w-4.5" />
-          <span>Kelola Calon Siswa (PPDB)</span>
-          {submissions.length > 0 && (
-            <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-              {submissions.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('pengumuman')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'pengumuman'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <FileCheck className="h-4.5 w-4.5" />
-          <span>Tulis Pengumuman</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('guru')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'guru'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <GraduationCap className="h-4.5 w-4.5 text-emerald-600" />
-          <span>Kelola Profil Guru</span>
-          {teachers.length > 0 && (
-            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
-              {teachers.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('testimoni')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'testimoni'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <MessageSquare className="h-4.5 w-4.5 text-emerald-600" />
-          <span>Kelola Testimoni & Alumni</span>
-          {testimonials.length > 0 && (
-            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
-              {testimonials.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('fasilitas')}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'fasilitas'
-              ? 'border-emerald-600 text-emerald-700 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Building className="h-4.5 w-4.5 text-emerald-600" />
-          <span>Kelola Fasilitas</span>
-          {facilities.length > 0 && (
-            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
-              {facilities.length}
-            </span>
-          )}
-        </button>
-        {userRole === 'admin' && (
+      <div className="bg-slate-50 border border-slate-200/60 p-2.5 rounded-2xl mb-8">
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${userRole === 'admin' ? 'lg:grid-cols-7' : 'lg:grid-cols-5'} gap-2`}>
           <button
-            onClick={() => setActiveTab('profil')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'profil'
-                ? 'border-emerald-600 text-emerald-700 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+            onClick={() => setActiveTab('kegiatan')}
+            className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+              activeTab === 'kegiatan'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
             }`}
           >
-            <Sparkles className="h-4.5 w-4.5" />
-            <span>Edit Profil Madrasah (Kustomisasi)</span>
+            <PlusCircle className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'kegiatan' ? 'text-white' : 'text-emerald-600'}`} />
+            <span className="truncate">Upload Kegiatan</span>
           </button>
-        )}
+
+          <button
+            onClick={() => setActiveTab('pendaftar')}
+            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+              activeTab === 'pendaftar'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Users className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'pendaftar' ? 'text-white' : 'text-emerald-600'}`} />
+              <span className="truncate">Kelola PPDB</span>
+            </div>
+            {submissions.length > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold shrink-0 shadow-sm ${
+                activeTab === 'pendaftar'
+                  ? 'bg-amber-400 text-slate-950 font-black'
+                  : 'bg-amber-500 text-white'
+              }`}>
+                {submissions.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pengumuman')}
+            className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+              activeTab === 'pengumuman'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+            }`}
+          >
+            <FileCheck className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'pengumuman' ? 'text-white' : 'text-emerald-600'}`} />
+            <span className="truncate">Tulis Pengumuman</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('guru')}
+            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+              activeTab === 'guru'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <GraduationCap className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'guru' ? 'text-white font-black' : 'text-emerald-600'}`} />
+              <span className="truncate">Kelola Guru</span>
+            </div>
+            {teachers.length > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
+                activeTab === 'guru'
+                  ? 'bg-white/20 text-white border-white/10'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
+              }`}>
+                {teachers.length}
+              </span>
+            )}
+          </button>
+
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setActiveTab('testimoni')}
+              className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+                activeTab === 'testimoni'
+                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <MessageSquare className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'testimoni' ? 'text-white' : 'text-emerald-600'}`} />
+                <span className="truncate">Alumni & Testimoni</span>
+              </div>
+              {testimonials.length > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
+                  activeTab === 'testimoni'
+                    ? 'bg-white/20 text-white border-white/10'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
+                }`}>
+                  {testimonials.length}
+                </span>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={() => setActiveTab('fasilitas')}
+            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+              activeTab === 'fasilitas'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Building className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'fasilitas' ? 'text-white' : 'text-emerald-600'}`} />
+              <span className="truncate">Kelola Fasilitas</span>
+            </div>
+            {facilities.length > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
+                activeTab === 'fasilitas'
+                  ? 'bg-white/20 text-white border-white/10'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
+              }`}>
+                {facilities.length}
+              </span>
+            )}
+          </button>
+
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setActiveTab('profil')}
+              className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+                activeTab === 'profil'
+                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+              }`}
+            >
+              <Sparkles className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'profil' ? 'text-white' : 'text-emerald-600'}`} />
+              <span className="truncate">Edit Profil / Kustom</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

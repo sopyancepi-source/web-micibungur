@@ -38,14 +38,37 @@ export default function Navbar({
     <header className="sticky top-0 z-50 w-full bg-[#f1f8f5]/95 backdrop-blur-md border-b border-emerald-100/60 shadow-sm">
       {/* Announcement Bar */}
       {latestImportantAnnouncement && (
-        <div className="w-full bg-emerald-600 text-white text-xs py-2 px-4 flex items-center justify-between gap-2 overflow-hidden">
-          <div className="flex items-center gap-2 mx-auto max-w-7xl w-full">
-            <span className="bg-amber-400 text-emerald-950 font-bold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider shrink-0 animate-pulse">
-              Penting
-            </span>
-            <p className="truncate text-center w-full font-medium tracking-wide">
-              {latestImportantAnnouncement}
-            </p>
+        <div className="w-full bg-emerald-600 text-white text-xs py-2 px-4 overflow-hidden relative">
+          <div className="mx-auto max-w-7xl w-full flex items-center relative">
+            {/* Solid background and wrapper for PENTING badge to hide text scrolling underneath */}
+            <div className="relative z-20 bg-emerald-600 flex items-center gap-2 pr-3.5 shrink-0 select-none">
+              <span className="bg-amber-400 text-emerald-950 font-extrabold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest animate-pulse shadow-sm">
+                Penting
+              </span>
+              <span className="text-emerald-400 font-bold">|</span>
+            </div>
+
+            {/* Scrolling container with absolute gradient overlays for the "titik hilang" fade effect */}
+            <div className="flex-1 overflow-hidden relative h-5">
+              {/* Left vanishing gradient */}
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-emerald-600 to-transparent z-10 pointer-events-none" />
+              {/* Right vanishing gradient */}
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-emerald-600 to-transparent z-10 pointer-events-none" />
+
+              {/* Seamless looping Marquee Track */}
+              <div className="absolute inset-0 flex items-center">
+                <div className="flex gap-16 whitespace-nowrap animate-marquee shrink-0">
+                  <div className="flex gap-16 items-center shrink-0">
+                    <span className="font-semibold tracking-wide text-emerald-50">{latestImportantAnnouncement}</span>
+                    <span className="text-amber-400 font-black select-none text-xs">✦</span>
+                  </div>
+                  <div className="flex gap-16 items-center shrink-0">
+                    <span className="font-semibold tracking-wide text-emerald-50">{latestImportantAnnouncement}</span>
+                    <span className="text-amber-400 font-black select-none text-xs">✦</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
