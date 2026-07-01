@@ -228,7 +228,49 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   alumniTrack2Desc: 'Wadah bagi alumni yang ingin mendonasikan buku perpustakaan, peralatan ibadah, atau sumbangan sarana pendidikan bagi adik kelas yang membutuhkan.',
   alumniTrack3Tag: '03 / KISAH SUKSES',
   alumniTrack3Title: 'Motivasi & Inspirasi',
-  alumniTrack3Desc: 'Berbagi cerita sukses alumni yang melanjutkan ke pesantren terkemuka atau sekolah favorit untuk memotivasi adik-adik kelas yang masih belajar.'
+  alumniTrack3Desc: 'Berbagi cerita sukses alumni yang melanjutkan ke pesantren terkemuka atau sekolah favorit untuk memotivasi adik-adik kelas yang masih belajar.',
+
+  // Customizable Footer defaults
+  footerDescription: 'Menyelenggarakan sistem pendidikan dasar berciri khas Islami yang membina generasi sholeh, berakhlak mulia, cerdas, dan mandiri.',
+  footerInstagram: 'https://instagram.com/micibungur1',
+  footerFacebook: 'https://facebook.com/micibungur1',
+  footerYoutube: 'https://youtube.com/micibungur1',
+  footerNavTitle: 'Akses Navigasi',
+  footerOpTitle: 'Jam Operasional',
+  footerOp1: 'Senin - Sabtu: 07:15 - 12:45 WIB',
+  footerOp2: 'Kegiatan Ekstra: Sabtu setelah Ashar',
+  footerOp3: 'Minggu / Libur Nasional: Tutup',
+  footerContactTitle: 'Hubungi Kami',
+
+  // Customizable PPDB defaults
+  ppdbTitle: 'Pendaftaran Siswa Baru MI Cibungur I',
+  ppdbSubtitle: 'Penerimaan Peserta Didik Baru (PPDB) 2026/2027',
+  ppdbDesc: 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan.',
+  ppdbSimulatorTitle: 'Simulator PPDB Cerdas',
+  ppdbSimulatorSubtitle: 'Cek kelolosan & beasiswa instan',
+  ppdbFormTitle: 'Formulir Pendaftaran Draf PPDB',
+  ppdbFormDesc: 'Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.',
+  ppdbGrades: 'Kelas 1 MI (Baru), Kelas 2-3 (Pindahan), Kelas 4-5 (Pindahan)',
+  ppdbReassurance: 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa',
+  ppdbYear: '2026',
+  ppdbButtonText: 'Daftar PPDB 2026',
+
+  // Customizable PPDB Scholarship defaults
+  ppdbSch1Title: 'Beasiswa Utama Tahfidz Juz 30',
+  ppdbSch1Discount: 'Gratis Seragam & Gedung',
+  ppdbSch1Benefit: 'Pemberian kitab suci gratis, pembinaan kelas tahfidz khusus dan keanggotaan klub cilik Al-Qur\'an.',
+
+  ppdbSch2Title: 'Beasiswa Anak Sholeh & Berprestasi',
+  ppdbSch2Discount: 'Diskon Gedung 75%',
+  ppdbSch2Benefit: 'Akses peminjaman buku perpustakaan lengkap gratis, prioritas bimbingan perlombaan Porseni MI.',
+
+  ppdbSch3Title: 'Bantuan Afirmasi Komite Madrasah',
+  ppdbSch3Discount: 'Diskon Gedung 50%',
+  ppdbSch3Benefit: 'Disubsidi komite wali murid bagi yang kurang mampu demi menjamin hak belajar anak.',
+
+  ppdbSch4Title: 'Subsidi Khusus Saudara Kandung',
+  ppdbSch4Discount: 'Diskon Daftar 25%',
+  ppdbSch4Benefit: 'Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.'
 };
 
 export const INITIAL_TEACHERS: Teacher[] = [

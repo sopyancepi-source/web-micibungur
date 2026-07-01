@@ -19,13 +19,14 @@ import {
   BadgeAlert,
   Download
 } from 'lucide-react';
-import { PPDBSubmission } from '../types';
+import { PPDBSubmission, SchoolProfile } from '../types';
 
 interface PPDBFormProps {
   onRegisterSubmit: (submission: Omit<PPDBSubmission, 'id' | 'date' | 'status'>) => void;
+  schoolProfile?: SchoolProfile;
 }
 
-export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
+export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormProps) {
   // Simulator State
   const [gradeAverage, setGradeAverage] = useState<number>(85);
   const [achievementLevel, setAchievementLevel] = useState<string>('tidak-ada');
@@ -33,13 +34,20 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPrediction, setShowPrediction] = useState(true);
 
+  // Parse custom grades list
+  const gradesList = schoolProfile?.ppdbGrades
+    ? schoolProfile.ppdbGrades.split(',').map(s => s.trim()).filter(Boolean)
+    : ['Kelas 1 MI (Baru)', 'Kelas 2-3 (Pindahan)', 'Kelas 4-5 (Pindahan)'];
+
   // Form State
   const [studentName, setStudentName] = useState('');
   const [parentName, setParentName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [prevSchool, setPrevSchool] = useState('');
-  const [gradeSelection, setGradeSelection] = useState('Kelas 1 MI (Baru)');
+  const [gradeSelection, setGradeSelection] = useState(() => {
+    return gradesList[0] || 'Kelas 1 MI (Baru)';
+  });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Calculate Scholarship tier
@@ -53,27 +61,27 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
     const juzNum = parseInt(isTahfidz);
 
     if (juzNum >= 10) {
-      title = "Beasiswa Utama Tahfidz Juz 30";
-      discount = "Gratis Seragam & Gedung";
-      benefit = "Pemberian kitab suci gratis, pembinaan kelas tahfidz khusus dan keanggotaan klub cilik Al-Qur'an.";
+      title = schoolProfile?.ppdbSch1Title || "Beasiswa Utama Tahfidz Juz 30";
+      discount = schoolProfile?.ppdbSch1Discount || "Gratis Seragam & Gedung";
+      benefit = schoolProfile?.ppdbSch1Benefit || "Pemberian kitab suci gratis, pembinaan kelas tahfidz khusus dan keanggotaan klub cilik Al-Qur'an.";
       bg = "bg-emerald-50 border-emerald-300 text-emerald-950";
       badgeColor = "bg-emerald-500 text-white";
     } else if (juzNum >= 3 || achievementLevel === 'nasional' || gradeAverage >= 95) {
-      title = "Beasiswa Anak Sholeh & Berprestasi";
-      discount = "Diskon Gedung 75%";
-      benefit = "Akses peminjaman buku perpustakaan lengkap gratis, prioritas bimbingan perlombaan Porseni MI.";
+      title = schoolProfile?.ppdbSch2Title || "Beasiswa Anak Sholeh & Berprestasi";
+      discount = schoolProfile?.ppdbSch2Discount || "Diskon Gedung 75%";
+      benefit = schoolProfile?.ppdbSch2Benefit || "Akses peminjaman buku perpustakaan lengkap gratis, prioritas bimbingan perlombaan Porseni MI.";
       bg = "bg-amber-50/70 border-amber-300 text-amber-950";
       badgeColor = "bg-amber-500 text-white";
     } else if (achievementLevel === 'provinsi' || gradeAverage >= 90) {
-      title = "Bantuan Afirmasi Komite Madrasah";
-      discount = "Diskon Gedung 50%";
-      benefit = "Disubsidi komite wali murid bagi yang kurang mampu demi menjamin hak belajar anak.";
+      title = schoolProfile?.ppdbSch3Title || "Bantuan Afirmasi Komite Madrasah";
+      discount = schoolProfile?.ppdbSch3Discount || "Diskon Gedung 50%";
+      benefit = schoolProfile?.ppdbSch3Benefit || "Disubsidi komite wali murid bagi yang kurang mampu demi menjamin hak belajar anak.";
       bg = "bg-blue-50 border-blue-200 text-blue-950";
       badgeColor = "bg-blue-500 text-white";
     } else if (achievementLevel === 'kabupaten' || gradeAverage >= 85) {
-      title = "Subsidi Khusus Saudara Kandung";
-      discount = "Diskon Daftar 25%";
-      benefit = "Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.";
+      title = schoolProfile?.ppdbSch4Title || "Subsidi Khusus Saudara Kandung";
+      discount = schoolProfile?.ppdbSch4Discount || "Diskon Daftar 25%";
+      benefit = schoolProfile?.ppdbSch4Benefit || "Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.";
       bg = "bg-purple-50 border-purple-200 text-purple-950";
       badgeColor = "bg-purple-500 text-white";
     }
@@ -146,13 +154,13 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-12">
         <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
-          Penerimaan Peserta Didik Baru (PPDB) 2026/2027
+          {schoolProfile?.ppdbSubtitle || 'Penerimaan Peserta Didik Baru (PPDB) 2026/2027'}
         </span>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-3">
-          Pendaftaran Siswa Baru MI Cibungur I
+          {schoolProfile?.ppdbTitle || 'Pendaftaran Siswa Baru MI Cibungur I'}
         </h2>
-        <p className="text-slate-600 mt-4 text-base md:text-lg">
-          Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan.
+        <p className="text-slate-600 mt-4 text-sm sm:text-base leading-relaxed">
+          {schoolProfile?.ppdbDesc || 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan.'}
         </p>
       </div>
 
@@ -165,10 +173,10 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 leading-snug">
-                Simulator PPDB Cerdas
+                {schoolProfile?.ppdbSimulatorTitle || 'Simulator PPDB Cerdas'}
               </h3>
               <p className="text-xs text-slate-400 font-medium">
-                Cek kelolosan & beasiswa instan
+                {schoolProfile?.ppdbSimulatorSubtitle || 'Cek kelolosan & beasiswa instan'}
               </p>
             </div>
           </div>
@@ -279,10 +287,10 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <FileText className="h-5.5 w-5.5 text-emerald-600" />
-                  Formulir Pendaftaran Draf PPDB
+                  {schoolProfile?.ppdbFormTitle || 'Formulir Pendaftaran Draf PPDB'}
                 </h3>
                 <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
-                  Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.
+                  {schoolProfile?.ppdbFormDesc || 'Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.'}
                 </p>
               </div>
 
@@ -292,15 +300,15 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Tingkat Peminatan Pendaftaran
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Kelas 1 MI (Baru)', 'Kelas 2-3 (Pindahan)', 'Kelas 4-5 (Pindahan)'].map((grade) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {gradesList.map((grade) => (
                       <button
                         type="button"
                         key={grade}
                         onClick={() => setGradeSelection(grade)}
-                        className={`py-3 px-1 text-center text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                        className={`py-3 px-1.5 text-center text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                           gradeSelection === grade
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm font-bold'
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'
                         }`}
                       >
@@ -416,7 +424,7 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
                     <CheckCircle className="h-3.5 w-3.5" />
                   </div>
                   <p className="text-[11px] text-slate-500 leading-normal">
-                    Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa <span className="font-semibold text-emerald-700">{est.title} ({est.discount})</span> jika hasil tes wawancara berkas sesuai.
+                    {schoolProfile?.ppdbReassurance || 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa'} <span className="font-semibold text-emerald-700">{est.title} ({est.discount})</span> jika hasil tes wawancara berkas sesuai.
                   </p>
                 </div>
 
@@ -432,7 +440,7 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
             </div>
           ) : (
             /* Success State */
-            <div className="bg-emerald-50/40 rounded-3xl border border-emerald-100 p-8 text-center shadow-lg flex flex-col items-center justify-center min-h-[450px]">
+            <div id="ppdb-receipt" className="bg-emerald-50/40 rounded-3xl border border-emerald-100 p-8 text-center shadow-lg flex flex-col items-center justify-center min-h-[450px]">
               <div className="h-16 w-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-6">
                 <CheckCircle className="h-10 w-10" />
               </div>
@@ -464,7 +472,7 @@ export default function PPDBForm({ onRegisterSubmit }: PPDBFormProps) {
                 Panitia PPDB Sekolah akan menghubungi Bapak/Ibu melalui nomor WhatsApp <strong className="text-slate-700">{phone}</strong> dalam kurun waktu 1x24 jam untuk pengiriman berkas kelengkapan digital.
               </p>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 no-print">
                 <button 
                   onClick={() => {
                     setIsSubmitted(false);

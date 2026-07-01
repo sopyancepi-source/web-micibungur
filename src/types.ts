@@ -152,6 +152,51 @@ export interface SchoolProfile {
   alumniTrack3Tag?: string;
   alumniTrack3Title?: string;
   alumniTrack3Desc?: string;
+
+  // Customizable Footer fields
+  footerDescription?: string;
+  footerInstagram?: string;
+  footerFacebook?: string;
+  footerYoutube?: string;
+  footerNavTitle?: string;
+  footerOpTitle?: string;
+  footerOp1?: string;
+  footerOp2?: string;
+  footerOp3?: string;
+  footerContactTitle?: string;
+
+  // Customizable PPDB fields
+  ppdbTitle?: string;
+  ppdbSubtitle?: string;
+  ppdbDesc?: string;
+  ppdbSimulatorTitle?: string;
+  ppdbSimulatorSubtitle?: string;
+  ppdbFormTitle?: string;
+  ppdbFormDesc?: string;
+  ppdbGrades?: string;
+  ppdbReassurance?: string;
+  ppdbYear?: string;
+  ppdbButtonText?: string;
+
+  // Scholarship Tier 1 (Hafidz)
+  ppdbSch1Title?: string;
+  ppdbSch1Discount?: string;
+  ppdbSch1Benefit?: string;
+
+  // Scholarship Tier 2 (Nasional / Prestasi Sangat Tinggi)
+  ppdbSch2Title?: string;
+  ppdbSch2Discount?: string;
+  ppdbSch2Benefit?: string;
+
+  // Scholarship Tier 3 (Provinsi / Afirmasi)
+  ppdbSch3Title?: string;
+  ppdbSch3Discount?: string;
+  ppdbSch3Benefit?: string;
+
+  // Scholarship Tier 4 (Kabupaten / Saudara Kandung)
+  ppdbSch4Title?: string;
+  ppdbSch4Discount?: string;
+  ppdbSch4Benefit?: string;
 }
 
 export interface Teacher {

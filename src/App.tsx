@@ -44,7 +44,7 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 
-import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher } from './types';
+import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher, Facility } from './types';
 import { 
   INITIAL_ACTIVITIES, 
   INITIAL_FACILITIES, 
@@ -93,6 +93,16 @@ export default function App() {
   const [teachers, setTeachers] = useState<Teacher[]>(() => {
     const saved = localStorage.getItem('school_teachers');
     return saved ? JSON.parse(saved) : INITIAL_TEACHERS;
+  });
+
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
+    const saved = localStorage.getItem('school_testimonials');
+    return saved ? JSON.parse(saved) : INITIAL_TESTIMONIALS;
+  });
+
+  const [facilities, setFacilities] = useState<Facility[]>(() => {
+    const saved = localStorage.getItem('school_facilities');
+    return saved ? JSON.parse(saved) : INITIAL_FACILITIES;
   });
 
   // Try to load and seed Firebase on Mount
@@ -167,6 +177,36 @@ export default function App() {
           setTeachers(INITIAL_TEACHERS);
         }
 
+        // 6. Fetch testimonials
+        const testimonialsCol = collection(db, 'testimonials');
+        const testimonialsSnap = await getDocs(testimonialsCol);
+        let activeTestimonials: Testimonial[] = [];
+        if (!testimonialsSnap.empty) {
+          activeTestimonials = testimonialsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Testimonial[];
+          setTestimonials(activeTestimonials);
+        } else {
+          // Seed testimonials
+          for (const test of INITIAL_TESTIMONIALS) {
+            await setDoc(doc(db, 'testimonials', test.id), test);
+          }
+          setTestimonials(INITIAL_TESTIMONIALS);
+        }
+
+        // 7. Fetch facilities
+        const facilitiesCol = collection(db, 'facilities');
+        const facilitiesSnap = await getDocs(facilitiesCol);
+        let activeFacilities: Facility[] = [];
+        if (!facilitiesSnap.empty) {
+          activeFacilities = facilitiesSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Facility[];
+          setFacilities(activeFacilities);
+        } else {
+          // Seed facilities
+          for (const fac of INITIAL_FACILITIES) {
+            await setDoc(doc(db, 'facilities', fac.id), fac);
+          }
+          setFacilities(INITIAL_FACILITIES);
+        }
+
         setFirebaseStatus('connected');
         setFirebaseError(null);
       } catch (err: any) {
@@ -199,6 +239,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_teachers', JSON.stringify(teachers));
   }, [teachers]);
+
+  useEffect(() => {
+    localStorage.setItem('school_testimonials', JSON.stringify(testimonials));
+  }, [testimonials]);
+
+  useEffect(() => {
+    localStorage.setItem('school_facilities', JSON.stringify(facilities));
+  }, [facilities]);
 
   // Fallback for deactivated audience tracks
   useEffect(() => {
@@ -276,6 +324,19 @@ export default function App() {
     }
   };
 
+  const handleUpdateSubmission = async (updatedSub: PPDBSubmission) => {
+    setSubmissions(submissions.map(sub => 
+      sub.id === updatedSub.id ? updatedSub : sub
+    ));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'submissions', updatedSub.id), updatedSub);
+      } catch (err) {
+        console.error('Error updating submission in Firebase:', err);
+      }
+    }
+  };
+
   const handleDeleteSubmission = async (id: string) => {
     setSubmissions(submissions.filter(sub => sub.id !== id));
     if (firebaseStatus === 'connected') {
@@ -338,6 +399,72 @@ export default function App() {
         await deleteDoc(doc(db, 'teachers', id));
       } catch (err) {
         console.error('Error deleting teacher from Firebase:', err);
+      }
+    }
+  };
+
+  const handleAddTestimonial = async (newTest: Testimonial) => {
+    setTestimonials([newTest, ...testimonials]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'testimonials', newTest.id), newTest);
+      } catch (err) {
+        console.error('Error writing testimonial to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateTestimonial = async (updatedTest: Testimonial) => {
+    setTestimonials(testimonials.map(t => t.id === updatedTest.id ? updatedTest : t));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'testimonials', updatedTest.id), updatedTest);
+      } catch (err) {
+        console.error('Error updating testimonial in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteTestimonial = async (id: string) => {
+    setTestimonials(testimonials.filter(t => t.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'testimonials', id));
+      } catch (err) {
+        console.error('Error deleting testimonial from Firebase:', err);
+      }
+    }
+  };
+
+  const handleAddFacility = async (newFac: Facility) => {
+    setFacilities([newFac, ...facilities]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'facilities', newFac.id), newFac);
+      } catch (err) {
+        console.error('Error writing facility to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateFacility = async (updatedFac: Facility) => {
+    setFacilities(facilities.map(f => f.id === updatedFac.id ? updatedFac : f));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'facilities', updatedFac.id), updatedFac);
+      } catch (err) {
+        console.error('Error updating facility in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteFacility = async (id: string) => {
+    setFacilities(facilities.filter(f => f.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'facilities', id));
+      } catch (err) {
+        console.error('Error deleting facility from Firebase:', err);
       }
     }
   };
@@ -883,7 +1010,7 @@ export default function App() {
 
             {/* 8. Testimonials Section */}
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 bg-slate-100/40 rounded-3xl py-4 border border-slate-200/50">
-              <TestimonialsSection testimonials={INITIAL_TESTIMONIALS} />
+              <TestimonialsSection testimonials={testimonials} />
             </div>
 
             {/* 9. Bottom Call to Action (PPDB Invitation) */}
@@ -928,7 +1055,7 @@ export default function App() {
 
         {/* VIEW 2: FASILITAS / VIRTUAL TOUR */}
         {currentView === 'fasilitas' && (
-          <VirtualTour facilities={INITIAL_FACILITIES} />
+          <VirtualTour facilities={facilities} />
         )}
 
         {/* VIEW: PROFIL GURU */}
@@ -943,7 +1070,7 @@ export default function App() {
 
         {/* VIEW 4: PENDAFTARAN PPDB */}
         {currentView === 'ppdb' && (
-          <PPDBForm onRegisterSubmit={handleRegisterSubmit} />
+          <PPDBForm onRegisterSubmit={handleRegisterSubmit} schoolProfile={schoolProfile} />
         )}
 
         {/* VIEW 5: ADMIN / PORTAL GURU */}
@@ -953,15 +1080,24 @@ export default function App() {
             submissions={submissions}
             announcements={announcements}
             teachers={teachers}
+            testimonials={testimonials}
+            facilities={facilities}
             onAddActivity={handleAddActivity}
             onDeleteActivity={handleDeleteActivity}
             onUpdateSubmissionStatus={handleUpdateSubmissionStatus}
+            onUpdateSubmission={handleUpdateSubmission}
             onDeleteSubmission={handleDeleteSubmission}
             onAddAnnouncement={handleAddAnnouncement}
             onDeleteAnnouncement={handleDeleteAnnouncement}
             onAddTeacher={handleAddTeacher}
             onUpdateTeacher={handleUpdateTeacher}
             onDeleteTeacher={handleDeleteTeacher}
+            onAddTestimonial={handleAddTestimonial}
+            onUpdateTestimonial={handleUpdateTestimonial}
+            onDeleteTestimonial={handleDeleteTestimonial}
+            onAddFacility={handleAddFacility}
+            onUpdateFacility={handleUpdateFacility}
+            onDeleteFacility={handleDeleteFacility}
             schoolProfile={schoolProfile}
             onUpdateSchoolProfile={handleUpdateSchoolProfile}
             firebaseStatus={firebaseStatus}
@@ -994,16 +1130,16 @@ export default function App() {
                 <span className="font-extrabold text-sm tracking-tight">{schoolProfile.schoolName}</span>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Menyelenggarakan sistem pendidikan dasar berciri khas Islami yang membina generasi sholeh, berakhlak mulia, cerdas, dan mandiri.
+                {schoolProfile.footerDescription || 'Menyelenggarakan sistem pendidikan dasar berciri khas Islami yang membina generasi sholeh, berakhlak mulia, cerdas, dan mandiri.'}
               </p>
               <div className="flex gap-2.5">
-                <a href="#" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
+                <a href={schoolProfile.footerInstagram || '#'} target="_blank" rel="noreferrer" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
                   <Instagram className="h-4 w-4" />
                 </a>
-                <a href="#" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
+                <a href={schoolProfile.footerFacebook || '#'} target="_blank" rel="noreferrer" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
                   <Facebook className="h-4 w-4" />
                 </a>
-                <a href="#" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
+                <a href={schoolProfile.footerYoutube || '#'} target="_blank" rel="noreferrer" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-emerald-600 hover:text-white text-slate-400 transition-all">
                   <Youtube className="h-4 w-4" />
                 </a>
               </div>
@@ -1011,38 +1147,38 @@ export default function App() {
 
             {/* Quick Links Column */}
             <div>
-              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">Akses Navigasi</h4>
+              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">{schoolProfile.footerNavTitle || 'Akses Navigasi'}</h4>
               <ul className="space-y-2.5 text-xs text-slate-400">
                 <li><button onClick={() => setView('beranda')} className="hover:text-emerald-500 transition-colors cursor-pointer">Profil Beranda</button></li>
                 <li><button onClick={() => setView('fasilitas')} className="hover:text-emerald-500 transition-colors cursor-pointer">Fasilitas Kampus</button></li>
                 <li><button onClick={() => setView('kegiatan')} className="hover:text-emerald-500 transition-colors cursor-pointer">Dokumentasi Kegiatan</button></li>
-                <li><button onClick={() => setView('ppdb')} className="hover:text-emerald-500 transition-colors cursor-pointer">Pendaftaran PPDB 2026</button></li>
+                <li><button onClick={() => setView('ppdb')} className="hover:text-emerald-500 transition-colors cursor-pointer">Pendaftaran PPDB {schoolProfile.ppdbYear || '2026'}</button></li>
                 <li><button onClick={() => setView('admin')} className="hover:text-emerald-500 transition-colors cursor-pointer">Portal Admin Guru & Staff</button></li>
               </ul>
             </div>
 
             {/* Operational Info Column */}
             <div>
-              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">Jam Operasional</h4>
+              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">{schoolProfile.footerOpTitle || 'Jam Operasional'}</h4>
               <ul className="space-y-3 text-xs text-slate-400">
                 <li className="flex gap-2 items-center">
                   <Clock className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Senin - Sabtu: 07:15 - 12:45 WIB</span>
+                  <span>{schoolProfile.footerOp1 || 'Senin - Sabtu: 07:15 - 12:45 WIB'}</span>
                 </li>
                 <li className="flex gap-2 items-center">
                   <Clock className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Kegiatan Ekstra: Sabtu setelah Ashar</span>
+                  <span>{schoolProfile.footerOp2 || 'Kegiatan Ekstra: Sabtu setelah Ashar'}</span>
                 </li>
                 <li className="flex gap-2 items-center">
                   <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Minggu / Libur Nasional: Tutup</span>
+                  <span>{schoolProfile.footerOp3 || 'Minggu / Libur Nasional: Tutup'}</span>
                 </li>
               </ul>
             </div>
 
             {/* Kontak Info Column */}
             <div>
-              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">Hubungi Kami</h4>
+              <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-4">{schoolProfile.footerContactTitle || 'Hubungi Kami'}</h4>
               <ul className="space-y-3 text-xs text-slate-400">
                 <li className="flex gap-2 items-start">
                   <MapPin className="h-4.5 w-4.5 text-emerald-500 shrink-0 mt-0.5" />
@@ -1063,7 +1199,7 @@ export default function App() {
 
           {/* Bottom copyright area */}
           <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
-            <p>&copy; {new Date().getFullYear()} {schoolProfile.schoolName} {schoolProfile.schoolSlogan}. Hak Cipta Dilindungi Undang-Undang.</p>
+            <p>&copy; 2026 Cepi Sopyan DEV. Hak Cipta Dilindungi Undang-Undang.</p>
             <div className="flex gap-4">
               <a href="#" className="hover:text-emerald-500">Kebijakan Privasi</a>
               <span>&bull;</span>

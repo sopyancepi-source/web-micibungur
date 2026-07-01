@@ -50,3 +50,34 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-slate-200 rounded-full hover:bg-slate-300;
 }
+
+/* Print Styling for PPDB Receipt */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #ppdb-receipt, #ppdb-receipt * {
+    visibility: visible;
+  }
+  #ppdb-receipt {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    width: 100%;
+    max-width: 100%;
+    border: 1px solid #e2e8f0;
+    background: white !important;
+    padding: 24px !important;
+    box-shadow: none !important;
+    border-radius: 16px !important;
+  }
+  #ppdb-receipt button, 
+  #ppdb-receipt .no-print {
+    display: none !important;
+  }
+}
+

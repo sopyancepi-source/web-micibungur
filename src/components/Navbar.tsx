@@ -131,7 +131,21 @@ export default function Navbar({
               id="nav-btn-ppdb"
               className="relative overflow-hidden px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white bg-gradient-to-r from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl shadow-md hover:shadow-lg shadow-emerald-900/10 hover:shadow-emerald-700/20 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer border border-emerald-600/20"
             >
-              <span className="relative z-10 flex items-center gap-1">Daftar PPDB <span className="text-amber-400">2026</span></span>
+              <span className="relative z-10 flex items-center gap-1">
+                {schoolProfile?.ppdbButtonText ? (
+                  schoolProfile.ppdbButtonText.includes(schoolProfile.ppdbYear || '2026') ? (
+                    <>
+                      {schoolProfile.ppdbButtonText.split(schoolProfile.ppdbYear || '2026')[0]}
+                      <span className="text-amber-400">{schoolProfile.ppdbYear || '2026'}</span>
+                      {schoolProfile.ppdbButtonText.split(schoolProfile.ppdbYear || '2026')[1]}
+                    </>
+                  ) : (
+                    schoolProfile.ppdbButtonText
+                  )
+                ) : (
+                  <>Daftar PPDB <span className="text-amber-400">2026</span></>
+                )}
+              </span>
             </button>
           </div>
 
@@ -199,7 +213,7 @@ export default function Navbar({
               }}
               className="w-full py-3 text-center text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-md transition-all"
             >
-              Daftar PPDB 2026/2027
+              {schoolProfile?.ppdbButtonText || 'Daftar PPDB 2026/2027'}
             </button>
           </div>
         </div>

@@ -25,24 +25,35 @@ import {
   GraduationCap,
   Upload,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Building,
+  Edit2
 } from 'lucide-react';
-import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher } from '../types';
+import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher, Testimonial, Facility } from '../types';
 
 interface AdminPortalProps {
   activities: Activity[];
   submissions: PPDBSubmission[];
   announcements: Announcement[];
   teachers: Teacher[];
+  testimonials: Testimonial[];
+  facilities: Facility[];
   onAddActivity: (activity: Activity) => void;
   onDeleteActivity: (id: string) => void;
   onUpdateSubmissionStatus: (id: string, status: PPDBSubmission['status']) => void;
+  onUpdateSubmission: (submission: PPDBSubmission) => void;
   onDeleteSubmission: (id: string) => void;
   onAddAnnouncement: (announcement: Announcement) => void;
   onDeleteAnnouncement?: (id: string) => void;
   onAddTeacher: (teacher: Teacher) => void;
   onUpdateTeacher: (teacher: Teacher) => void;
   onDeleteTeacher: (id: string) => void;
+  onAddTestimonial: (testimonial: Testimonial) => void;
+  onUpdateTestimonial: (testimonial: Testimonial) => void;
+  onDeleteTestimonial: (id: string) => void;
+  onAddFacility: (facility: Facility) => void;
+  onUpdateFacility: (facility: Facility) => void;
+  onDeleteFacility: (id: string) => void;
   schoolProfile?: SchoolProfile;
   onUpdateSchoolProfile?: (profile: SchoolProfile) => void;
   firebaseStatus?: 'loading' | 'connected' | 'error';
@@ -56,6 +67,23 @@ const PRESET_IMAGES = [
   { id: 'pres-4', label: 'Pementasan Musik & Drama', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=800' },
   { id: 'pres-5', label: 'Upacara / Prestasi Siswa', url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800' },
   { id: 'pres-6', label: 'Rapat Organisasi OSIS', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800' },
+];
+
+const TESTIMONIAL_AVATAR_PRESETS = [
+  { label: 'Bapak Jajang', url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Ibu Nenden', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Alumni Pria', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Alumni Wanita', url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Siswa', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
+];
+
+const FACILITY_IMAGE_PRESETS = [
+  { label: 'Ruang Kelas Nyaman', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800' },
+  { label: 'Masjid Al-Ikhlas', url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=800' },
+  { label: 'Perpustakaan Islami', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=800' },
+  { label: 'Halaman & Olahraga', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&q=80&w=800' },
+  { label: 'Lab Komputer Baru', url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800' },
+  { label: 'Peralatan Ekstrakurikuler', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800' }
 ];
 
 const compressImage = (file: File, maxWidth = 800, maxHeight = 1000, quality = 0.92): Promise<string> => {
@@ -107,21 +135,35 @@ export default function AdminPortal({
   submissions,
   announcements,
   teachers,
+  testimonials,
+  facilities,
   onAddActivity,
   onDeleteActivity,
   onUpdateSubmissionStatus,
+  onUpdateSubmission,
   onDeleteSubmission,
   onAddAnnouncement,
   onDeleteAnnouncement,
   onAddTeacher,
   onUpdateTeacher,
   onDeleteTeacher,
+  onAddTestimonial,
+  onUpdateTestimonial,
+  onDeleteTestimonial,
+  onAddFacility,
+  onUpdateFacility,
+  onDeleteFacility,
   schoolProfile,
   onUpdateSchoolProfile,
   firebaseStatus,
   firebaseError
 }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru'>('kegiatan');
+  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru' | 'testimoni' | 'fasilitas'>('kegiatan');
+
+  // Parse custom grades list
+  const gradesList = schoolProfile?.ppdbGrades
+    ? schoolProfile.ppdbGrades.split(',').map(s => s.trim()).filter(Boolean)
+    : ['Kelas 1 MI (Baru)', 'Kelas 2-3 (Pindahan)', 'Kelas 4-5 (Pindahan)'];
 
   // Secure Role-Based Gate State
   const [loginMode, setLoginMode] = useState<'guru' | 'admin'>('guru');
@@ -271,6 +313,234 @@ export default function AdminPortal({
       joinedYear: new Date().getFullYear().toString(),
       order: undefined
     });
+  };
+
+  // Testimonial Form State & Handlers
+  const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
+  const [isUploadingTestimonial, setIsUploadingTestimonial] = useState(false);
+  const [testimonialImageSource, setTestimonialImageSource] = useState<'upload' | 'link' | 'preset'>('preset');
+  const [testimonialForm, setTestimonialForm] = useState<{
+    name: string;
+    role: 'Orang Tua' | 'Alumni' | 'Siswa';
+    text: string;
+    avatar: string;
+    year: string;
+  }>({
+    name: '',
+    role: 'Orang Tua',
+    text: '',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
+    year: ''
+  });
+
+  const handleTestimonialPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingTestimonial(true);
+      try {
+        const compressed = await compressImage(file, 200, 200, 0.9);
+        setTestimonialForm(prev => ({ ...prev, avatar: compressed }));
+      } catch (err) {
+        console.error('Failed to compress testimonial avatar:', err);
+      } finally {
+        setIsUploadingTestimonial(false);
+      }
+    }
+  };
+
+  const handleTestimonialSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTestimonialId) {
+      onUpdateTestimonial({
+        id: editingTestimonialId,
+        ...testimonialForm
+      });
+      setEditingTestimonialId(null);
+    } else {
+      onAddTestimonial({
+        id: `test-${Date.now()}`,
+        ...testimonialForm
+      });
+    }
+    setTestimonialForm({
+      name: '',
+      role: 'Orang Tua',
+      text: '',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
+      year: ''
+    });
+    setTestimonialImageSource('preset');
+  };
+
+  const handleStartEditTestimonial = (test: Testimonial) => {
+    setEditingTestimonialId(test.id);
+    setTestimonialForm({
+      name: test.name,
+      role: test.role,
+      text: test.text,
+      avatar: test.avatar,
+      year: test.year || ''
+    });
+    if (test.avatar && test.avatar.startsWith('data:image')) {
+      setTestimonialImageSource('upload');
+    } else if (TESTIMONIAL_AVATAR_PRESETS.some(preset => preset.url === test.avatar)) {
+      setTestimonialImageSource('preset');
+    } else {
+      setTestimonialImageSource('link');
+    }
+  };
+
+  const handleCancelEditTestimonial = () => {
+    setEditingTestimonialId(null);
+    setTestimonialForm({
+      name: '',
+      role: 'Orang Tua',
+      text: '',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
+      year: ''
+    });
+    setTestimonialImageSource('preset');
+  };
+
+  // Facilities Form State & Handlers
+  const [editingFacilityId, setEditingFacilityId] = useState<string | null>(null);
+  const [isUploadingFacility, setIsUploadingFacility] = useState(false);
+  const [facilityImageSource, setFacilityImageSource] = useState<'upload' | 'link' | 'preset'>('preset');
+  const [facilityForm, setFacilityForm] = useState<{
+    name: string;
+    description: string;
+    tag: string;
+    image: string;
+  }>({
+    name: '',
+    description: '',
+    tag: 'Kelas',
+    image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800'
+  });
+
+  const handleFacilityPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingFacility(true);
+      try {
+        const compressed = await compressImage(file, 800, 600, 0.85);
+        setFacilityForm(prev => ({ ...prev, image: compressed }));
+      } catch (err) {
+        console.error('Failed to compress facility photo:', err);
+      } finally {
+        setIsUploadingFacility(false);
+      }
+    }
+  };
+
+  const handleFacilitySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!facilityForm.name.trim()) return;
+
+    if (editingFacilityId) {
+      onUpdateFacility({
+        id: editingFacilityId,
+        ...facilityForm
+      });
+      setEditingFacilityId(null);
+    } else {
+      onAddFacility({
+        id: `fac-${Date.now()}`,
+        ...facilityForm
+      });
+    }
+
+    setFacilityForm({
+      name: '',
+      description: '',
+      tag: 'Kelas',
+      image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800'
+    });
+    setFacilityImageSource('preset');
+  };
+
+  const handleStartEditFacility = (fac: Facility) => {
+    setEditingFacilityId(fac.id);
+    setFacilityForm({
+      name: fac.name,
+      description: fac.description,
+      tag: fac.tag,
+      image: fac.image
+    });
+    if (fac.image && fac.image.startsWith('data:image')) {
+      setFacilityImageSource('upload');
+    } else if (FACILITY_IMAGE_PRESETS.some(preset => preset.url === fac.image)) {
+      setFacilityImageSource('preset');
+    } else {
+      setFacilityImageSource('link');
+    }
+  };
+
+  const handleCancelEditFacility = () => {
+    setEditingFacilityId(null);
+    setFacilityForm({
+      name: '',
+      description: '',
+      tag: 'Kelas',
+      image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800'
+    });
+    setFacilityImageSource('preset');
+  };
+
+  // PPDB Submission Edit State & Handlers
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [submissionForm, setSubmissionForm] = useState<{
+    id: string;
+    studentName: string;
+    parentName: string;
+    phone: string;
+    email: string;
+    prevSchool: string;
+    grade: string;
+    notes: string;
+    status: PPDBSubmission['status'];
+    date: string;
+  }>({
+    id: '',
+    studentName: '',
+    parentName: '',
+    phone: '',
+    email: '',
+    prevSchool: '',
+    grade: '',
+    notes: '',
+    status: 'Menunggu Review',
+    date: ''
+  });
+
+  const handleStartEditSubmission = (sub: PPDBSubmission) => {
+    setEditingSubId(sub.id);
+    setSubmissionForm({
+      id: sub.id,
+      studentName: sub.studentName,
+      parentName: sub.parentName,
+      phone: sub.phone,
+      email: sub.email,
+      prevSchool: sub.prevSchool,
+      grade: sub.grade,
+      notes: sub.notes || '',
+      status: sub.status,
+      date: sub.date
+    });
+  };
+
+  const handleCancelEditSubmission = () => {
+    setEditingSubId(null);
+  };
+
+  const handleSubmissionFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submissionForm.studentName.trim()) return;
+
+    onUpdateSubmission({
+      ...submissionForm
+    });
+    setEditingSubId(null);
   };
 
   const handleMoveTeacherUp = async (teacher: Teacher) => {
@@ -734,6 +1004,38 @@ service cloud.firestore {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setActiveTab('testimoni')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
+            activeTab === 'testimoni'
+              ? 'border-emerald-600 text-emerald-700 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <MessageSquare className="h-4.5 w-4.5 text-emerald-600" />
+          <span>Kelola Testimoni & Alumni</span>
+          {testimonials.length > 0 && (
+            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
+              {testimonials.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('fasilitas')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all cursor-pointer ${
+            activeTab === 'fasilitas'
+              ? 'border-emerald-600 text-emerald-700 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Building className="h-4.5 w-4.5 text-emerald-600" />
+          <span>Kelola Fasilitas</span>
+          {facilities.length > 0 && (
+            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-100/50">
+              {facilities.length}
+            </span>
+          )}
+        </button>
         {userRole === 'admin' && (
           <button
             onClick={() => setActiveTab('profil')}
@@ -1062,6 +1364,14 @@ service cloud.firestore {
                               >
                                 <MessageSquare className="h-4.5 w-4.5" />
                               </a>
+                              {/* Edit Submission Button */}
+                              <button
+                                onClick={() => handleStartEditSubmission(sub)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer"
+                                title="Edit Data Calon Siswa"
+                              >
+                                <Edit2 className="h-4.5 w-4.5" />
+                              </button>
                               {userRole === 'admin' && (
                                 <button
                                   onClick={() => onDeleteSubmission(sub.id)}
@@ -1078,6 +1388,172 @@ service cloud.firestore {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Modal Edit Pendaftar PPDB */}
+            {editingSubId && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+                <div className="bg-white rounded-3xl border border-slate-100 max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center shrink-0">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <Edit2 className="h-4 w-4 text-emerald-600" />
+                        <span>Edit Data Calon Siswa (PPDB)</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">ID: {editingSubId} • Terdaftar: {submissionForm.date}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditSubmission}
+                      className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-all cursor-pointer font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmissionFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-grow text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Nama Lengkap Siswa */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Nama Lengkap Siswa *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={submissionForm.studentName}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, studentName: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+
+                      {/* Nama Orang Tua / Wali */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Nama Orang Tua / Wali *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={submissionForm.parentName}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, parentName: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* No WhatsApp */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          No. WhatsApp Aktif *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={submissionForm.phone}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, phone: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Alamat Email *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={submissionForm.email}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, email: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Sekolah Asal */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Sekolah Asal *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={submissionForm.prevSchool}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, prevSchool: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+
+                      {/* Pilihan Kelas */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Pilihan Kelas *
+                        </label>
+                        <select
+                          value={submissionForm.grade}
+                          onChange={(e) => setSubmissionForm({ ...submissionForm, grade: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-bold cursor-pointer"
+                        >
+                          {gradesList.map((grade) => (
+                            <option key={grade} value={grade}>{grade}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Catatan / Estimasi Beasiswa */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Klaim Beasiswa & Catatan Khusus
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={submissionForm.notes}
+                        onChange={(e) => setSubmissionForm({ ...submissionForm, notes: e.target.value })}
+                        className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold leading-relaxed"
+                        placeholder="Contoh: Hafal Juz 30 (Klaim Beasiswa Utama Tahfidz)"
+                      />
+                    </div>
+
+                    {/* Status Seleksi */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Status Pendaftaran
+                      </label>
+                      <select
+                        value={submissionForm.status}
+                        onChange={(e) => setSubmissionForm({ ...submissionForm, status: e.target.value as PPDBSubmission['status'] })}
+                        className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-bold cursor-pointer"
+                      >
+                        <option value="Menunggu Review">Review Berkas</option>
+                        <option value="Jadwal Wawancara">Wawancara</option>
+                        <option value="Diterima">Diterima</option>
+                        <option value="Ditolak">Ditolak</option>
+                      </select>
+                    </div>
+
+                    {/* Form Buttons */}
+                    <div className="flex gap-2 pt-3 border-t border-slate-100 justify-end">
+                      <button
+                        type="button"
+                        onClick={handleCancelEditSubmission}
+                        className="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 px-5 rounded-xl hover:bg-slate-200 transition-all cursor-pointer text-center"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-all shadow-md cursor-pointer text-center font-bold"
+                      >
+                        Simpan Perubahan
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             )}
           </div>
@@ -1525,6 +2001,515 @@ service cloud.firestore {
                 <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-3">
                   <Users className="h-8 w-8 text-slate-300 mx-auto" />
                   <p className="text-xs text-slate-500 font-medium">Belum ada data guru terdaftar.</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'testimoni' && (
+          <>
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left flex flex-col h-fit animate-fade-in">
+              <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <MessageSquare className="h-5 w-5 text-emerald-600" />
+                <span>{editingTestimonialId ? 'Edit Testimoni' : 'Tambah Testimoni Baru'}</span>
+              </h3>
+
+              <form onSubmit={handleTestimonialSubmit} className="space-y-4">
+                {/* Nama Lengkap */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Nama Lengkap *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Bapak H. Jajang"
+                    value={testimonialForm.name}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                  />
+                </div>
+
+                {/* Peran / Kategori */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Peran / Kategori *
+                  </label>
+                  <select
+                    value={testimonialForm.role}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, role: e.target.value as any })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                  >
+                    <option value="Orang Tua">Orang Tua</option>
+                    <option value="Alumni">Alumni</option>
+                    <option value="Siswa">Siswa</option>
+                  </select>
+                </div>
+
+                {/* Keterangan / Subtext (e.g. Wali Murid Kelas V) */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Subtext Keterangan (Asal / Angkatan) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Wali Murid Kelas V (Asal Kp. Cibungur)"
+                    value={testimonialForm.year}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, year: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                  />
+                </div>
+
+                {/* Isi Testimoni */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Isi Testimoni / Pengalaman *
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Tuliskan pengalaman atau kesan pesan terhadap MI Cibungur I di sini..."
+                    value={testimonialForm.text}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, text: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 leading-relaxed font-medium"
+                  />
+                </div>
+
+                {/* Pilihan Foto / Avatar */}
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Foto / Avatar Testimoni
+                  </label>
+
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setTestimonialImageSource('preset')}
+                      className={`flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        testimonialImageSource === 'preset'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                          : 'bg-white border-slate-200 text-slate-500 font-medium'
+                      }`}
+                    >
+                      Preset Profil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTestimonialImageSource('upload')}
+                      className={`flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        testimonialImageSource === 'upload'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                          : 'bg-white border-slate-200 text-slate-500 font-medium'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTestimonialImageSource('link')}
+                      className={`flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        testimonialImageSource === 'link'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                          : 'bg-white border-slate-200 text-slate-500 font-medium'
+                      }`}
+                    >
+                      URL Link
+                    </button>
+                  </div>
+
+                  {testimonialImageSource === 'preset' && (
+                    <div className="grid grid-cols-5 gap-2 pt-1">
+                      {TESTIMONIAL_AVATAR_PRESETS.map((preset) => (
+                        <button
+                          key={preset.url}
+                          type="button"
+                          onClick={() => setTestimonialForm({ ...testimonialForm, avatar: preset.url })}
+                          className={`relative p-1 rounded-lg border hover:border-emerald-500 transition-colors cursor-pointer ${
+                            testimonialForm.avatar === preset.url ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 bg-slate-50/20'
+                          }`}
+                          title={preset.label}
+                        >
+                          <img src={preset.url} alt={preset.label} className="w-8 h-8 rounded-full object-cover mx-auto" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {testimonialImageSource === 'upload' && (
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-3 pb-3 text-center px-4">
+                          <Upload className="h-5 w-5 text-slate-400 mb-1" />
+                          <p className="text-[10px] text-slate-500 font-semibold">Upload foto profil</p>
+                          <p className="text-[8px] text-slate-400">JPG/PNG</p>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleTestimonialPhotoFileChange}
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {testimonialImageSource === 'link' && (
+                    <input
+                      type="url"
+                      placeholder="Masukkan link gambar (https://...)"
+                      value={testimonialForm.avatar}
+                      onChange={(e) => setTestimonialForm({ ...testimonialForm, avatar: e.target.value })}
+                      className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                    />
+                  )}
+
+                  {testimonialForm.avatar && (
+                    <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100 mt-2">
+                      <img src={testimonialForm.avatar} alt="Preview Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0 animate-fade-in" />
+                      <div className="text-[10px] text-slate-400">
+                        {isUploadingTestimonial ? 'Mengompres foto...' : 'Preview Foto Aktif'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2.5 pt-3 border-t border-slate-100">
+                  <button
+                    type="submit"
+                    className="flex-grow py-3 px-4 bg-emerald-800 text-white rounded-xl text-xs font-bold hover:bg-emerald-950 transition-colors cursor-pointer shadow-md"
+                  >
+                    {editingTestimonialId ? 'Simpan Perubahan' : 'Publish Testimoni'}
+                  </button>
+                  {editingTestimonialId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditTestimonial}
+                      className="py-3 px-4 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col h-fit text-left animate-fade-in">
+              <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                <span>Daftar Testimoni Wali Murid & Alumni ({testimonials.length})</span>
+                <span className="text-[10px] text-slate-400 font-mono">Tampil di Halaman Depan</span>
+              </h3>
+
+              {testimonials.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {testimonials.map((test) => (
+                    <div key={test.id} className="p-4 rounded-xl border border-slate-100 hover:shadow-sm transition-all bg-slate-50/50 space-y-3 relative">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <img src={test.avatar} alt={test.name} className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0" />
+                          <div>
+                            <h4 className="font-extrabold text-xs text-slate-900">{test.name}</h4>
+                            <p className="text-[9px] text-slate-400 mt-0.5 font-semibold leading-none">{test.year}</p>
+                          </div>
+                        </div>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          test.role === 'Orang Tua'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : test.role === 'Alumni'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {test.role}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-600 italic leading-relaxed">
+                        "{test.text}"
+                      </p>
+
+                      <div className="flex justify-end gap-2 border-t border-slate-100/60 pt-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditTestimonial(test)}
+                          className="px-3 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg cursor-pointer border border-emerald-100"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteTestimonial(test.id)}
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg cursor-pointer"
+                          title="Hapus Testimoni"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-3">
+                  <MessageSquare className="h-8 w-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">Belum ada testimoni terdaftar.</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'fasilitas' && (
+          <>
+            {/* Form Tambah/Edit Fasilitas */}
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left flex flex-col h-fit animate-fade-in">
+              <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Building className="h-5 w-5 text-emerald-600" />
+                <span>{editingFacilityId ? 'Edit Fasilitas' : 'Tambah Fasilitas Baru'}</span>
+              </h3>
+
+              <form onSubmit={handleFacilitySubmit} className="space-y-4">
+                {/* Nama Fasilitas */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Nama Fasilitas *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Lab Komputer MI Cibungur I"
+                    value={facilityForm.name}
+                    onChange={(e) => setFacilityForm({ ...facilityForm, name: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold"
+                  />
+                </div>
+
+                {/* Deskripsi Fasilitas */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Deskripsi / Penjelasan Singkat *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Jelaskan kenyamanan, kegunaan, atau alat pendukung yang ada di fasilitas ini..."
+                    value={facilityForm.description}
+                    onChange={(e) => setFacilityForm({ ...facilityForm, description: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-semibold leading-relaxed"
+                  />
+                </div>
+
+                {/* Kategori / Label Tag */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Label Kategori / Tag *
+                  </label>
+                  <select
+                    value={facilityForm.tag}
+                    onChange={(e) => setFacilityForm({ ...facilityForm, tag: e.target.value })}
+                    className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-bold"
+                  >
+                    <option value="Kelas">Kelas</option>
+                    <option value="Ibadah">Ibadah</option>
+                    <option value="Literasi">Literasi</option>
+                    <option value="Fisik">Olahraga / Fisik</option>
+                    <option value="Laboratorium">Laboratorium</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                {/* Image Source Selection */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Sumber Foto Fasilitas
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setFacilityImageSource('preset')}
+                      className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        facilityImageSource === 'preset'
+                          ? 'bg-white text-emerald-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Preset Galeri
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFacilityImageSource('upload')}
+                      className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        facilityImageSource === 'upload'
+                          ? 'bg-white text-emerald-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Upload Foto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFacilityImageSource('link')}
+                      className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        facilityImageSource === 'link'
+                          ? 'bg-white text-emerald-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Link Web (URL)
+                    </button>
+                  </div>
+
+                  {facilityImageSource === 'preset' && (
+                    <div className="space-y-2">
+                      <label className="block text-[10px] text-slate-400">Pilih dari preset berkualitas tinggi:</label>
+                      <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+                        {FACILITY_IMAGE_PRESETS.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setFacilityForm({ ...facilityForm, image: preset.url })}
+                            className={`p-1 rounded-xl border text-left transition-all overflow-hidden flex flex-col gap-1 hover:border-emerald-500 bg-slate-50/50 ${
+                              facilityForm.image === preset.url
+                                ? 'border-emerald-500 ring-2 ring-emerald-100'
+                                : 'border-slate-150'
+                            }`}
+                          >
+                            <img src={preset.url} alt={preset.label} className="h-12 w-full object-cover rounded-lg" />
+                            <span className="text-[9px] font-bold text-slate-700 truncate w-full px-1">{preset.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {facilityImageSource === 'upload' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-emerald-500 transition-all">
+                          <div className="flex flex-col items-center justify-center pt-3 pb-3">
+                            <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                            <p className="text-[10px] text-slate-500 font-bold">
+                              {isUploadingFacility ? 'Sedang memproses...' : 'Klik untuk Pilih & Upload'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 mt-0.5">Format JPG/PNG (Kompresi otomatis)</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={isUploadingFacility}
+                            onChange={handleFacilityPhotoFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {facilityImageSource === 'link' && (
+                    <div>
+                      <input
+                        type="url"
+                        placeholder="Masukkan URL Gambar (https://...)"
+                        value={facilityForm.image}
+                        onChange={(e) => setFacilityForm({ ...facilityForm, image: e.target.value })}
+                        className="w-full text-xs rounded-xl border border-slate-200 p-2.5 focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-mono"
+                      />
+                    </div>
+                  )}
+
+                  {/* Image Preview */}
+                  {facilityForm.image && (
+                    <div className="mt-3 p-2 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
+                      <img
+                        src={facilityForm.image}
+                        alt="Preview"
+                        className="h-12 w-16 object-cover rounded-lg border border-slate-200 shrink-0"
+                      />
+                      <div className="overflow-hidden">
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Preview Gambar Terpilih</p>
+                        <p className="text-[10px] text-slate-400 truncate font-mono">{facilityForm.image}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex gap-2 pt-2 border-t border-slate-50">
+                  {editingFacilityId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditFacility}
+                      className="flex-1 bg-slate-100 text-slate-700 text-xs font-bold py-3 rounded-xl hover:bg-slate-200 transition-all cursor-pointer text-center"
+                    >
+                      Batal
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isUploadingFacility}
+                    className="flex-grow bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer text-center font-bold"
+                  >
+                    {editingFacilityId ? 'Simpan Perubahan' : 'Tambah Fasilitas'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List Fasilitas Terdaftar */}
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left flex flex-col animate-fade-in">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Fasilitas Madrasah ({facilities.length})</h3>
+                  <p className="text-xs text-slate-400">Seluruh fasilitas penunjang yang ditampilkan di halaman depan web.</p>
+                </div>
+              </div>
+
+              {facilities.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[640px] overflow-y-auto pr-1">
+                  {facilities.map((fac) => (
+                    <div
+                      key={fac.id}
+                      className="group border border-slate-150 rounded-2xl overflow-hidden flex flex-col bg-slate-50/20 hover:border-emerald-300 hover:shadow-md transition-all duration-300"
+                    >
+                      <div className="h-32 w-full overflow-hidden relative">
+                        <img src={fac.image} alt={fac.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                        <span className="absolute top-2.5 left-2.5 bg-emerald-800 text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-sm tracking-wide uppercase">
+                          {fac.tag}
+                        </span>
+                      </div>
+                      <div className="p-4 flex-grow flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{fac.name}</h4>
+                          <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-3 h-12 overflow-hidden">{fac.description}</p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2 border-t border-slate-100 pt-3 mt-3">
+                          <button
+                            onClick={() => handleStartEditFacility(fac)}
+                            className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Hapus fasilitas "${fac.name}"?`)) {
+                                onDeleteFacility(fac.id);
+                              }
+                            }}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl transition-all cursor-pointer"
+                            title="Hapus Fasilitas"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-3">
+                  <Building className="h-8 w-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">Belum ada fasilitas terdaftar.</p>
                 </div>
               )}
             </div>
@@ -2640,6 +3625,126 @@ service cloud.firestore {
                 </div>
               </div>
 
+              {/* Group 4F: Kustomisasi Footer & Jam Operasional */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  4F. Kustomisasi Bagian Kaki Web (Footer) & Jam Operasional
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Gunakan bagian ini untuk merubah informasi deskripsi madrasah, link akun media sosial resmi, judul navigasi, serta rincian jam operasional yang tampil di bagian bawah seluruh halaman website.
+                </p>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Bagian Deskripsi & Judul Kolom */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Deskripsi Singkat Madrasah (Kaki Kiri)</label>
+                      <textarea
+                        rows={3}
+                        value={profileForm.footerDescription || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, footerDescription: e.target.value })}
+                        placeholder="Menyelenggarakan sistem pendidikan dasar berciri khas Islami..."
+                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Judul Navigasi</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerNavTitle || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerNavTitle: e.target.value })}
+                          placeholder="Akses Navigasi"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Judul Operasional</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerOpTitle || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerOpTitle: e.target.value })}
+                          placeholder="Jam Operasional"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Judul Kontak</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerContactTitle || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerContactTitle: e.target.value })}
+                          placeholder="Hubungi Kami"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bagian Sosial Media & Jam Operasional */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Link Instagram</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerInstagram || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerInstagram: e.target.value })}
+                          placeholder="https://instagram.com/..."
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Link Facebook</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerFacebook || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerFacebook: e.target.value })}
+                          placeholder="https://facebook.com/..."
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Link YouTube</label>
+                        <input
+                          type="text"
+                          value={profileForm.footerYoutube || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, footerYoutube: e.target.value })}
+                          placeholder="https://youtube.com/..."
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700">Rincian Jam Operasional</label>
+                      <input
+                        type="text"
+                        value={profileForm.footerOp1 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, footerOp1: e.target.value })}
+                        placeholder="Baris 1: Senin - Sabtu: 07:15 - 12:45 WIB"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.footerOp2 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, footerOp2: e.target.value })}
+                        placeholder="Baris 2: Kegiatan Ekstra: Sabtu setelah Ashar"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.footerOp3 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, footerOp3: e.target.value })}
+                        placeholder="Baris 3: Minggu / Libur Nasional: Tutup"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Group 5: Kontrol Akses Menu Pengunjung */}
               <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
                 <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
@@ -2690,10 +3795,307 @@ service cloud.firestore {
                 </div>
               </div>
 
-              {/* Group 6: Manajemen Keamanan & Hak Akses Portal */}
+              {/* Group 6: Kustomisasi Template & Alur PPDB */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  6. Kustomisasi Template & Alur PPDB (Siswa Baru)
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Gunakan pengaturan di bawah ini untuk mengustomisasi seluruh tampilan, kalimat ajakan, judul simulator, opsi pilihan kelas, hingga teks jaminan pada Formulir PPDB utama.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100/50">
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-950 mb-1.5">🗓️ Tahun PPDB (Aktif)</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbYear || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbYear: e.target.value })}
+                      placeholder="2026"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Mengubah tahun PPDB di navigasi, footer, dan form secara otomatis.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-950 mb-1.5">🟢 Teks Tombol Daftar (Navigasi)</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbButtonText || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbButtonText: e.target.value })}
+                      placeholder="Daftar PPDB 2026"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Mengubah tulisan tombol utama berwarna hijau di navigasi atas.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Slogan / Sub-judul Atas PPDB</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbSubtitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbSubtitle: e.target.value })}
+                      placeholder="Penerimaan Peserta Didik Baru (PPDB) 2026/2027"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Utama Halaman PPDB</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbTitle: e.target.value })}
+                      placeholder="Pendaftaran Siswa Baru MI Cibungur I"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Deskripsi / Kalimat Ajakan PPDB</label>
+                  <textarea
+                    rows={2}
+                    value={profileForm.ppdbDesc || ''}
+                    onChange={(e) => setProfileForm({ ...profileForm, ppdbDesc: e.target.value })}
+                    placeholder="Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan."
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 resize-y"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Simulator PPDB</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbSimulatorTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbSimulatorTitle: e.target.value })}
+                      placeholder="Simulator PPDB Cerdas"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Sub-judul Simulator</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbSimulatorSubtitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbSimulatorSubtitle: e.target.value })}
+                      placeholder="Cek kelolosan & beasiswa instan"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Formulir Draf Pendaftaran</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbFormTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbFormTitle: e.target.value })}
+                      placeholder="Formulir Pendaftaran Draf PPDB"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Opsi Pilihan Kelas / Tingkat (Pisahkan dengan tanda koma `,`)</label>
+                    <input
+                      type="text"
+                      value={profileForm.ppdbGrades || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, ppdbGrades: e.target.value })}
+                      placeholder="Kelas 1 MI (Baru), Kelas 2-3 (Pindahan), Kelas 4-5 (Pindahan)"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Deskripsi Petunjuk Formulir PPDB</label>
+                  <textarea
+                    rows={2}
+                    value={profileForm.ppdbFormDesc || ''}
+                    onChange={(e) => setProfileForm({ ...profileForm, ppdbFormDesc: e.target.value })}
+                    placeholder="Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini."
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 resize-y"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Teks Jaminan / Reassurance di Kaki Formulir</label>
+                  <textarea
+                    rows={2}
+                    value={profileForm.ppdbReassurance || ''}
+                    onChange={(e) => setProfileForm({ ...profileForm, ppdbReassurance: e.target.value })}
+                    placeholder="Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 resize-y"
+                  />
+                </div>
+
+                {/* Sub-group: Kustomisasi Tipe Beasiswa Simulator */}
+                <div className="pt-4 mt-2 border-t border-dashed border-slate-200 space-y-4">
+                  <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>✨ Pengaturan Kriteria & Nilai Beasiswa Simulator</span>
+                  </h5>
+                  <p className="text-[11px] text-slate-400 leading-normal">
+                    Sesuaikan nama beasiswa, potongan biaya (diskon), dan manfaat tambahan yang otomatis dikalkulasi serta ditampilkan oleh Simulator PPDB Cerdas saat orang tua/calon siswa memasukkan nilai atau kriteria mereka.
+                  </p>
+
+                  <div className="space-y-6">
+                    {/* Tier 1: Beasiswa Utama Tahfidz */}
+                    <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/50 space-y-3">
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md">Kriteria 1: Tahfidz Juz 10+</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama Beasiswa</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch1Title || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch1Title: e.target.value })}
+                            placeholder="Beasiswa Utama Tahfidz Juz 30"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Diskon / Potongan Biaya</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch1Discount || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch1Discount: e.target.value })}
+                            placeholder="Gratis Seragam & Gedung"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Fasilitas / Manfaat Tambahan</label>
+                        <input
+                          type="text"
+                          value={profileForm.ppdbSch1Benefit || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, ppdbSch1Benefit: e.target.value })}
+                          placeholder="Pemberian kitab suci gratis, pembinaan kelas tahfidz khusus dan keanggotaan klub cilik Al-Qur'an."
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tier 2: Beasiswa Anak Sholeh & Berprestasi */}
+                    <div className="bg-amber-50/20 p-4 rounded-2xl border border-amber-100/40 space-y-3">
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md">Kriteria 2: Tahfidz 3+ Juz / Prestasi Nasional / Rata-rata Nilai 95+</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama Beasiswa</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch2Title || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch2Title: e.target.value })}
+                            placeholder="Beasiswa Anak Sholeh & Berprestasi"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Diskon / Potongan Biaya</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch2Discount || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch2Discount: e.target.value })}
+                            placeholder="Diskon Gedung 75%"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Fasilitas / Manfaat Tambahan</label>
+                        <input
+                          type="text"
+                          value={profileForm.ppdbSch2Benefit || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, ppdbSch2Benefit: e.target.value })}
+                          placeholder="Akses peminjaman buku perpustakaan lengkap gratis, prioritas bimbingan perlombaan Porseni MI."
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tier 3: Bantuan Afirmasi Komite Madrasah */}
+                    <div className="bg-blue-50/20 p-4 rounded-2xl border border-blue-100/30 space-y-3">
+                      <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded-md">Kriteria 3: Prestasi Provinsi / Rata-rata Nilai 90+</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama Beasiswa</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch3Title || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch3Title: e.target.value })}
+                            placeholder="Bantuan Afirmasi Komite Madrasah"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Diskon / Potongan Biaya</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch3Discount || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch3Discount: e.target.value })}
+                            placeholder="Diskon Gedung 50%"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Fasilitas / Manfaat Tambahan</label>
+                        <input
+                          type="text"
+                          value={profileForm.ppdbSch3Benefit || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, ppdbSch3Benefit: e.target.value })}
+                          placeholder="Disubsidi komite wali murid bagi yang kurang mampu demi menjamin hak belajar anak."
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tier 4: Subsidi Khusus Saudara Kandung */}
+                    <div className="bg-purple-50/20 p-4 rounded-2xl border border-purple-100/30 space-y-3">
+                      <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-1 rounded-md">Kriteria 4: Prestasi Kabupaten / Rata-rata Nilai 85+</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama Beasiswa</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch4Title || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch4Title: e.target.value })}
+                            placeholder="Subsidi Khusus Saudara Kandung"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Diskon / Potongan Biaya</label>
+                          <input
+                            type="text"
+                            value={profileForm.ppdbSch4Discount || ''}
+                            onChange={(e) => setProfileForm({ ...profileForm, ppdbSch4Discount: e.target.value })}
+                            placeholder="Diskon Daftar 25%"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white font-semibold"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Fasilitas / Manfaat Tambahan</label>
+                        <input
+                          type="text"
+                          value={profileForm.ppdbSch4Benefit || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, ppdbSch4Benefit: e.target.value })}
+                          placeholder="Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I."
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 7: Manajemen Keamanan & Hak Akses Portal */}
               <div className="space-y-4 pt-6 border-t border-slate-100 text-left">
                 <h4 className="text-sm font-bold text-amber-800 uppercase tracking-wider border-l-4 border-amber-500 pl-2">
-                  6. Manajemen Keamanan & Hak Akses Portal
+                  7. Manajemen Keamanan & Hak Akses Portal
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
