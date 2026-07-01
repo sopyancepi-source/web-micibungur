@@ -47,6 +47,16 @@ export default function TeacherProfile({ teachers }: TeacherProfileProps) {
     return matchesSearch && matchesRole;
   });
 
+  // Sort teachers by order, fallback to name
+  const sortedTeachers = [...filteredTeachers].sort((a, b) => {
+    const orderA = a.order !== undefined && a.order !== null ? Number(a.order) : 9999;
+    const orderB = b.order !== undefined && b.order !== null ? Number(b.order) : 9999;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="bg-slate-50/50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-12">
@@ -99,9 +109,9 @@ export default function TeacherProfile({ teachers }: TeacherProfileProps) {
         </div>
 
         {/* Grid of Teachers */}
-        {filteredTeachers.length > 0 ? (
+        {sortedTeachers.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5 max-w-7xl mx-auto">
-            {filteredTeachers.map((teacher) => (
+            {sortedTeachers.map((teacher) => (
               <div
                 key={teacher.id}
                 onClick={() => setSelectedTeacher(teacher)}

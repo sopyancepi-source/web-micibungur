@@ -76,6 +76,82 @@ export interface SchoolProfile {
   registeredAdmins?: string[];
   adminPin?: string;
   guruPin?: string;
+
+  // New Flexible Homepage customization fields
+  heroImage?: string;
+  heroBadge?: string;
+  heroTopBadge?: string;
+  seal1?: string;
+  seal2?: string;
+  seal3?: string;
+  heroStat1Title?: string;
+  heroStat1Value?: string;
+  heroStat1Label?: string;
+  heroStat2Title?: string;
+  heroStat2Value?: string;
+  heroStat2Label?: string;
+  principalTitle?: string;
+  principalSubtext?: string;
+  
+  usp1Title?: string;
+  usp1Desc?: string;
+  usp2Title?: string;
+  usp2Desc?: string;
+  usp3Title?: string;
+  usp3Desc?: string;
+  usp4Title?: string;
+  usp4Desc?: string;
+
+  roadmap1Title?: string;
+  roadmap1Points?: string;
+  roadmap2Title?: string;
+  roadmap2Points?: string;
+  roadmap3Title?: string;
+  roadmap3Points?: string;
+
+  bigStat1Number?: string;
+  bigStat1Title?: string;
+  bigStat2Number?: string;
+  bigStat2Title?: string;
+  bigStat3Number?: string;
+  bigStat3Title?: string;
+  bigStat4Number?: string;
+  bigStat4Title?: string;
+
+  // Customizable Audience Tracks (Parents, Students, Alumni)
+  audienceSectionTag?: string;
+  audienceSectionTitle?: string;
+  audienceSectionDesc?: string;
+
+  parentTrack1Tag?: string;
+  parentTrack1Title?: string;
+  parentTrack1Desc?: string;
+  parentTrack2Tag?: string;
+  parentTrack2Title?: string;
+  parentTrack2Desc?: string;
+  parentTrack3Tag?: string;
+  parentTrack3Title?: string;
+  parentTrack3Desc?: string;
+
+  studentTrack1Tag?: string;
+  studentTrack1Title?: string;
+  studentTrack1Desc?: string;
+  studentTrack2Tag?: string;
+  studentTrack2Title?: string;
+  studentTrack2Desc?: string;
+  studentTrack3Tag?: string;
+  studentTrack3Title?: string;
+  studentTrack3Desc?: string;
+
+  alumniTrack1Tag?: string;
+  alumniTrack1Title?: string;
+  alumniTrack1Desc?: string;
+  alumniTrack2Tag?: string;
+  alumniTrack2Title?: string;
+  alumniTrack2Desc?: string;
+  alumniTrack3Tag?: string;
+  alumniTrack3Title?: string;
+  alumniTrack3Desc?: string;
 }
 
 export interface Teacher {
@@ -88,6 +164,7 @@ export interface Teacher {
   biography?: string; // custom short biography of the teacher
   status: 'Aktif' | 'Cuti' | string;
   joinedYear?: string;
+  order?: number; // Sorting/layout order for the teacher profiles
 }
 
 

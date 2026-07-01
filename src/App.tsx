@@ -383,7 +383,7 @@ export default function App() {
                   <div className="lg:col-span-7 space-y-8 text-left">
                     <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100/80 text-emerald-900 text-xs font-bold px-3.5 py-2 rounded-full uppercase tracking-wider shadow-sm">
                       <Award className="h-4.5 w-4.5 text-amber-500 shrink-0" />
-                      <span>Akreditasi A & Madrasah Ibtidaiyah Rujukan Karakter</span>
+                      <span>{schoolProfile.heroTopBadge || 'Akreditasi A & Madrasah Ibtidaiyah Rujukan Karakter'}</span>
                     </div>
 
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-950 tracking-tight leading-[1.08] font-sans">
@@ -416,9 +416,9 @@ export default function App() {
                     <div className="pt-8 border-t border-slate-100">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Pendidikan & Karakter Madrasah:</p>
                       <div className="flex flex-wrap items-center gap-6 opacity-75">
-                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">KURIKULUM KEMENAG RI</span>
-                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">BAN-SM TERAKREDITASI A</span>
-                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">PEMBIASAAN TAHFIDZ JUZ 30</span>
+                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">{schoolProfile.seal1 || 'KURIKULUM KEMENAG RI'}</span>
+                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">{schoolProfile.seal2 || 'BAN-SM TERAKREDITASI A'}</span>
+                        <span className="text-xs font-extrabold text-slate-500 border border-slate-200 px-2.5 py-1 rounded bg-slate-50/50">{schoolProfile.seal3 || 'PEMBIASAAN TAHFIDZ JUZ 30'}</span>
                       </div>
                     </div>
                   </div>
@@ -429,30 +429,31 @@ export default function App() {
                     <div className="relative bg-gradient-to-b from-emerald-50 to-white rounded-3xl border border-slate-100/90 p-4 shadow-2xl overflow-hidden aspect-square flex flex-col justify-between">
                       <div className="relative w-full h-[72%] overflow-hidden rounded-2xl group">
                         <img 
-                          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200" 
+                          src={schoolProfile.heroImage || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200'} 
                           alt="Siswa Belajar Bersama" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/40 to-transparent" />
                         <span className="absolute top-4 left-4 bg-slate-900/95 backdrop-blur text-white text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-md border border-slate-800">
-                          KAMPUS UNGGUL
+                          {schoolProfile.heroBadge || 'KAMPUS UNGGUL'}
                         </span>
                       </div>
                       
                       {/* Live strategic stats ticker inside graphic mock */}
                       <div className="grid grid-cols-2 gap-3 pt-3">
                         <div className="bg-emerald-900/5 hover:bg-emerald-900/10 transition-colors p-3.5 rounded-xl border border-emerald-500/10 text-left">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 leading-none mb-1.5">PENDAFTAR BULAN INI</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 leading-none mb-1.5">{schoolProfile.heroStat1Title || 'PENDAFTAR BULAN INI'}</p>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-lg font-extrabold text-slate-950 tracking-tight">+182</span>
-                            <span className="text-[10px] text-emerald-600 font-bold">Terverifikasi</span>
+                            <span className="text-lg font-extrabold text-slate-950 tracking-tight">{schoolProfile.heroStat1Value || '+182'}</span>
+                            <span className="text-[10px] text-emerald-600 font-bold">{schoolProfile.heroStat1Label || 'Terverifikasi'}</span>
                           </div>
                         </div>
                         <div className="bg-amber-500/5 hover:bg-amber-500/10 transition-colors p-3.5 rounded-xl border border-amber-500/10 text-left">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800 leading-none mb-1.5">KUOTA JALUR BEASISWA</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800 leading-none mb-1.5">{schoolProfile.heroStat2Title || 'KUOTA JALUR BEASISWA'}</p>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-lg font-extrabold text-slate-950 tracking-tight">14 Kursi</span>
-                            <span className="text-[10px] text-red-500 font-bold animate-pulse">Sisa</span>
+                            <span className="text-lg font-extrabold text-slate-950 tracking-tight">{schoolProfile.heroStat2Value || '14 Kursi'}</span>
+                            <span className="text-[10px] text-red-500 font-bold animate-pulse">{schoolProfile.heroStat2Label || 'Sisa'}</span>
                           </div>
                         </div>
                       </div>
@@ -475,6 +476,7 @@ export default function App() {
                         src={schoolProfile.principalAvatar} 
                         alt={schoolProfile.principalName} 
                         className="relative z-10 w-52 md:w-60 rounded-3xl object-cover shadow-2xl border-4 border-white"
+                        referrerPolicy="no-referrer"
                       />
                     </div>
                   </div>
@@ -484,7 +486,7 @@ export default function App() {
                       <span>Sambutan Kepala Madrasah</span>
                     </div>
                     <h3 className="text-2xl md:text-3xl font-bold text-slate-900 leading-snug">
-                      "Ikhlas Beramal, Mengabdi Demi Pendidikan Akhlak & Karakter Anak"
+                      "{schoolProfile.principalTitle || 'Ikhlas Beramal, Mengabdi Demi Pendidikan Akhlak & Karakter Anak'}"
                     </h3>
                     <p className="text-slate-600 text-sm md:text-base leading-relaxed italic font-serif">
                       "{schoolProfile.principalSpeech}"
@@ -495,7 +497,7 @@ export default function App() {
                         <p className="text-xs text-slate-400 font-medium">{schoolProfile.principalRole}</p>
                       </div>
                       <div className="px-3.5 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-100 text-[10px] font-bold uppercase tracking-wider">
-                        KKG Kabupaten Bandung Barat
+                        {schoolProfile.principalSubtext || 'KKG Kabupaten Bandung Barat'}
                       </div>
                     </div>
                   </div>
@@ -509,12 +511,14 @@ export default function App() {
                 <div className="absolute top-0 right-0 h-96 w-96 bg-emerald-500 rounded-full blur-3xl opacity-5 transform translate-x-32 -translate-y-32" />
                 
                 <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto mb-10">
-                  <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">PEMBELAJARAN BERFOKUS AKHLAK</span>
+                  <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">
+                    {schoolProfile.audienceSectionTag || 'PEMBELAJARAN BERFOKUS AKHLAK'}
+                  </span>
                   <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
-                    Program & Pembiasaan Terbaik bagi Calon Siswa
+                    {schoolProfile.audienceSectionTitle || 'Program & Pembiasaan Terbaik bagi Calon Siswa'}
                   </h2>
                   <p className="text-slate-400 mt-2 text-xs md:text-sm max-w-2xl">
-                    Silakan pilih profil Anda di bawah ini untuk melihat komitmen pelayanan pendidikan serta nilai tambah yang kami hadirkan bagi keluarga Anda.
+                    {schoolProfile.audienceSectionDesc || 'Silakan pilih profil Anda di bawah ini untuk melihat komitmen pelayanan pendidikan serta nilai tambah yang kami hadirkan bagi keluarga Anda.'}
                   </p>
 
                   {/* Toggle Selector Tabs */}
@@ -563,24 +567,36 @@ export default function App() {
                   {audienceTrack === 'parent' && schoolProfile.isParentAccessActive !== false && (
                     <>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-emerald-400 text-xs font-bold font-mono">01 / SILATURAHMI</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Monitoring Perkembangan Anak</h4>
+                        <span className="text-emerald-400 text-xs font-bold font-mono">
+                          {schoolProfile.parentTrack1Tag || '01 / SILATURAHMI'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.parentTrack1Title || 'Monitoring Perkembangan Anak'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Kemudahan berkomunikasi langsung dengan wali kelas via WhatsApp untuk memantau ibadah shalat dan progres hafalan surat pendek anak di rumah.
+                          {schoolProfile.parentTrack1Desc || 'Kemudahan berkomunikasi langsung dengan wali kelas via WhatsApp untuk memantau ibadah shalat dan progres hafalan surat pendek anak di rumah.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-emerald-400 text-xs font-bold font-mono">02 / AKHLAK MULIA</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Bimbingan Sopan Santun</h4>
+                        <span className="text-emerald-400 text-xs font-bold font-mono">
+                          {schoolProfile.parentTrack2Tag || '02 / AKHLAK MULIA'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.parentTrack2Title || 'Bimbingan Sopan Santun'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Kurikulum kami menekankan adab menghormati orang tua, menyayangi sesama, dan kemandirian perilaku anak dalam kehidupan sehari-hari.
+                          {schoolProfile.parentTrack2Desc || 'Kurikulum kami menekankan adab menghormati orang tua, menyayangi sesama, dan kemandirian perilaku anak dalam kehidupan sehari-hari.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-emerald-400 text-xs font-bold font-mono">03 / BEASISWA</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Biaya Terjangkau & Subsidi</h4>
+                        <span className="text-emerald-400 text-xs font-bold font-mono">
+                          {schoolProfile.parentTrack3Tag || '03 / BEASISWA'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.parentTrack3Title || 'Biaya Terjangkau & Subsidi'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Madrasah kami mendukung penuh seluruh lapisan masyarakat dengan skema subsidi silang, beasiswa komite, serta kemudahan biaya bagi anak yatim/piatu.
+                          {schoolProfile.parentTrack3Desc || 'Madrasah kami mendukung penuh seluruh lapisan masyarakat dengan skema subsidi silang, beasiswa komite, serta kemudahan biaya bagi anak yatim/piatu.'}
                         </p>
                       </div>
                     </>
@@ -588,24 +604,36 @@ export default function App() {
                   {audienceTrack === 'student' && schoolProfile.isStudentAccessActive !== false && (
                     <>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-amber-400 text-xs font-bold font-mono">01 / KEAGAMAAN</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Bimbingan Iqra & Al-Qur'an</h4>
+                        <span className="text-amber-400 text-xs font-bold font-mono">
+                          {schoolProfile.studentTrack1Tag || '01 / KEAGAMAAN'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.studentTrack1Title || "Bimbingan Iqra & Al-Qur'an"}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Belajar mengaji dengan metode yang menyenangkan, dibimbing ustadz/ustadzah penyabar mulai dari nol hingga lancar membaca Al-Qur'an.
+                          {schoolProfile.studentTrack1Desc || 'Belajar mengaji dengan metode yang menyenangkan, dibimbing ustadz/ustadzah penyabar mulai dari nol hingga lancar membaca Al-Qur\'an.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-amber-400 text-xs font-bold font-mono">02 / CERITA ISLAMI</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Kisah Teladan Rasul</h4>
+                        <span className="text-amber-400 text-xs font-bold font-mono">
+                          {schoolProfile.studentTrack2Tag || '02 / CERITA ISLAMI'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.studentTrack2Title || 'Kisah Teladan Rasul'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Pembelajaran disisipi dongeng Islami menarik, menceritakan perjuangan nabi dan sahabat untuk menumbuhkan rasa cinta pada agama sejak kecil.
+                          {schoolProfile.studentTrack2Desc || 'Pembelajaran disisipi dongeng Islami menarik, menceritakan perjuangan nabi dan sahabat untuk menumbuhkan rasa cinta pada agama sejak kecil.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-amber-400 text-xs font-bold font-mono">03 / BERMAIN</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Pramuka & Silat Tapak Suci</h4>
+                        <span className="text-amber-400 text-xs font-bold font-mono">
+                          {schoolProfile.studentTrack3Tag || '03 / BERMAIN'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.studentTrack3Title || 'Pramuka & Silat Tapak Suci'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Ikuti kegiatan luar kelas yang asyik mulai dari Pramuka Siaga/Penggalang, mewarnai bersama, hingga olahraga bela diri fisik yang melatih ketangkasan.
+                          {schoolProfile.studentTrack3Desc || 'Ikuti kegiatan luar kelas yang asyik mulai dari Pramuka Siaga/Penggalang, mewarnai bersama, hingga olahraga bela diri fisik yang melatih ketangkasan.'}
                         </p>
                       </div>
                     </>
@@ -613,24 +641,36 @@ export default function App() {
                   {audienceTrack === 'alumni' && schoolProfile.isAlumniAccessActive !== false && (
                     <>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-blue-400 text-xs font-bold font-mono">01 / JEJARING ALUMNI</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Ikatan Alumni MI Cibungur</h4>
+                        <span className="text-blue-400 text-xs font-bold font-mono">
+                          {schoolProfile.alumniTrack1Tag || '01 / JEJARING ALUMNI'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.alumniTrack1Title || 'Ikatan Alumni MI Cibungur'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Menjaga silaturahmi antar alumni lintas angkatan untuk bertukar info jenjang SMP/MTS, pondok pesantren, hingga kolaborasi demi kemajuan bersama.
+                          {schoolProfile.alumniTrack1Desc || 'Menjaga silaturahmi antar alumni lintas angkatan untuk bertukar info jenjang SMP/MTS, pondok pesantren, hingga kolaborasi demi kemajuan bersama.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-blue-400 text-xs font-bold font-mono">02 / DONASI & KONTRIBUSI</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Sumbangsih Almamater</h4>
+                        <span className="text-blue-400 text-xs font-bold font-mono">
+                          {schoolProfile.alumniTrack2Tag || '02 / DONASI & KONTRIBUSI'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.alumniTrack2Title || 'Sumbangsih Almamater'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Wadah bagi alumni yang ingin mendonasikan buku perpustakaan, peralatan ibadah, atau sumbangan sarana pendidikan bagi adik kelas yang membutuhkan.
+                          {schoolProfile.alumniTrack2Desc || 'Wadah bagi alumni yang ingin mendonasikan buku perpustakaan, peralatan ibadah, atau sumbangan sarana pendidikan bagi adik kelas yang membutuhkan.'}
                         </p>
                       </div>
                       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl text-left hover:border-emerald-500/30 transition-all">
-                        <span className="text-blue-400 text-xs font-bold font-mono">03 / KISAH SUKSES</span>
-                        <h4 className="text-base font-bold text-white mt-2 mb-3">Motivasi & Inspirasi</h4>
+                        <span className="text-blue-400 text-xs font-bold font-mono">
+                          {schoolProfile.alumniTrack3Tag || '03 / KISAH SUKSES'}
+                        </span>
+                        <h4 className="text-base font-bold text-white mt-2 mb-3">
+                          {schoolProfile.alumniTrack3Title || 'Motivasi & Inspirasi'}
+                        </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                          Berbagi cerita sukses alumni yang melanjutkan ke pesantren terkemuka atau sekolah favorit untuk memotivasi adik-adik kelas yang masih belajar.
+                          {schoolProfile.alumniTrack3Desc || 'Berbagi cerita sukses alumni yang melanjutkan ke pesantren terkemuka atau sekolah favorit untuk memotivasi adik-adik kelas yang masih belajar.'}
                         </p>
                       </div>
                     </>
@@ -668,20 +708,17 @@ export default function App() {
                   <div className="h-12 w-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center font-extrabold mb-5 shadow-lg shadow-emerald-900/10">
                     I-II
                   </div>
-                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">Kelas I - II: Pembiasaan Adab & Iqra</h4>
+                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">{schoolProfile.roadmap1Title || 'Kelas I - II: Pembiasaan Adab & Iqra'}</h4>
                   <ul className="text-xs text-slate-500 space-y-2 mt-3 leading-relaxed">
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Belajar mengaji Iqra secara bertahap, lancar, dan tanpa paksaan</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Penanaman karakter dasar 5S (Senyum, Sapa, Salam, Sopan, Santun)</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Pembelajaran motorik dasar, menggambar Islami, & calistung ramah anak</span>
-                    </li>
+                    {(schoolProfile.roadmap1Points || 'Belajar mengaji Iqra secara bertahap, lancar, dan tanpa paksaan\nPenanaman karakter dasar 5S (Senyum, Sapa, Salam, Sopan, Santun)\nPembelajaran motorik dasar, menggambar Islami, & calistung ramah anak')
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((point, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <span className="text-emerald-700 font-bold">&bull;</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
 
@@ -690,20 +727,17 @@ export default function App() {
                   <div className="h-12 w-12 rounded-2xl bg-emerald-800 text-white flex items-center justify-center font-extrabold mb-5 shadow-lg shadow-emerald-900/10">
                     III-IV
                   </div>
-                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">Kelas III - IV: Kemandirian & Hafalan Juz Amma</h4>
+                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">{schoolProfile.roadmap2Title || 'Kelas III - IV: Kemandirian & Hafalan Juz Amma'}</h4>
                   <ul className="text-xs text-slate-500 space-y-2 mt-3 leading-relaxed">
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Mulai menghafal surat-surat pendek Juz 30 secara rutin berulang</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Kegiatan Kepramukaan Siaga melatih kepemimpinan, kerjasama, dan disiplin</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-emerald-700 font-bold">&bull;</span>
-                      <span>Eksplorasi ilmu sains dasar berbasis lingkungan sekitar madrasah</span>
-                    </li>
+                    {(schoolProfile.roadmap2Points || 'Mulai menghafal surat-surat pendek Juz 30 secara rutin berulang\nKegiatan Kepramukaan Siaga melatih kepemimpinan, kerjasama, dan disiplin\nEksplorasi ilmu sains dasar berbasis lingkungan sekitar madrasah')
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((point, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <span className="text-emerald-700 font-bold">&bull;</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
 
@@ -712,20 +746,17 @@ export default function App() {
                   <div className="h-12 w-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center font-extrabold mb-5 shadow-lg shadow-amber-600/10">
                     V-VI
                   </div>
-                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">Kelas V - VI: Kepemimpinan & Kelulusan Berkah</h4>
+                  <h4 className="font-extrabold text-sm text-slate-950 mb-2">{schoolProfile.roadmap3Title || 'Kelas V - VI: Kepemimpinan & Kelulusan Berkah'}</h4>
                   <ul className="text-xs text-slate-500 space-y-2 mt-3 leading-relaxed">
-                    <li className="flex gap-2">
-                      <span className="text-amber-600 font-bold">&bull;</span>
-                      <span>Pemantapan hafalan Juz 30 sebagai mahkota kelulusan utama madrasah</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-600 font-bold">&bull;</span>
-                      <span>Bimbingan belajar intensif menyongsong SMP / MTs favorit Kabupaten</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-600 font-bold">&bull;</span>
-                      <span>Bakti sosial cilik, tadabbur alam, dan pembiasaan shalat berjamaah mandiri</span>
-                    </li>
+                    {(schoolProfile.roadmap3Points || 'Pemantapan hafalan Juz 30 sebagai mahkota kelulusan utama madrasah\nBimbingan belajar intensif menyongsong SMP / MTs favorit Kabupaten\nBakti sosial cilik, tadabbur alam, dan pembiasaan shalat berjamaah mandiri')
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((point, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <span className="text-amber-600 font-bold">&bull;</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               </div>
@@ -738,7 +769,7 @@ export default function App() {
                   Keunggulan Kompetitif
                 </span>
                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 mt-3">
-                  Mengapa MI Cibungur I Dipercaya Masyarakat?
+                  Mengapa {schoolProfile.schoolName} Dipercaya Masyarakat?
                 </h2>
                 <p className="text-slate-500 mt-3 text-xs md:text-sm">
                   Kami mengintegrasikan pendidikan akhlak yang kokoh dengan metode belajar yang ramah untuk mengasah potensi terbaik setiap anak.
@@ -752,9 +783,9 @@ export default function App() {
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center mb-4 group-hover:bg-emerald-800 group-hover:text-white transition-colors">
                     <BookOpen className="h-5 w-5" />
                   </div>
-                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">Kurikulum Terpadu</h3>
+                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">{schoolProfile.usp1Title || 'Kurikulum Terpadu'}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Sinergi apik Kurikulum Merdeka Nasional dengan kurikulum keagamaan Kementerian Agama Republik Indonesia.
+                    {schoolProfile.usp1Desc || 'Sinergi apik Kurikulum Merdeka Nasional dengan kurikulum keagamaan Kementerian Agama Republik Indonesia.'}
                   </p>
                 </div>
 
@@ -763,9 +794,9 @@ export default function App() {
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center mb-4 group-hover:bg-emerald-800 group-hover:text-white transition-colors">
                     <Cpu className="h-5 w-5" />
                   </div>
-                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">Pembiasaan Ibadah</h3>
+                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">{schoolProfile.usp2Title || 'Pembiasaan Ibadah'}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Melatih shalat dhuha, shalat dzuhur berjamaah, zikir harian, hafalan hadits, serta doa fardhu sejak usia dini.
+                    {schoolProfile.usp2Desc || 'Melatih shalat dhuha, shalat dzuhur berjamaah, zikir harian, hafalan hadits, serta doa fardhu sejak usia dini.'}
                   </p>
                 </div>
 
@@ -774,9 +805,9 @@ export default function App() {
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center mb-4 group-hover:bg-emerald-800 group-hover:text-white transition-colors">
                     <Globe className="h-5 w-5" />
                   </div>
-                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">Rasio Kelas Nyaman</h3>
+                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">{schoolProfile.usp3Title || 'Rasio Kelas Nyaman'}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Jumlah murid per kelas dibatasi proporsional agar guru dapat memberikan perhatian penuh, sabar, dan kasih sayang intensif.
+                    {schoolProfile.usp3Desc || 'Jumlah murid per kelas dibatasi proporsional agar guru dapat memberikan perhatian penuh, sabar, dan kasih sayang intensif.'}
                   </p>
                 </div>
 
@@ -785,9 +816,9 @@ export default function App() {
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center mb-4 group-hover:bg-emerald-800 group-hover:text-white transition-colors">
                     <Users className="h-5 w-5" />
                   </div>
-                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">Sangat Ringan & Terjangkau</h3>
+                  <h3 className="font-extrabold text-sm text-slate-900 mb-2">{schoolProfile.usp4Title || 'Sangat Ringan & Terjangkau'}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Biaya SPP bulanan yang ringan, subsidi khusus anak berprestasi, yatim, dhuafa, serta beasiswa komite komprehensif.
+                    {schoolProfile.usp4Desc || 'Biaya SPP bulanan yang ringan, subsidi khusus anak berprestasi, yatim, dhuafa, serta beasiswa komite komprehensif.'}
                   </p>
                 </div>
 

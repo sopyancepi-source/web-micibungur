@@ -64,8 +64,8 @@ export default function StatsSection({ schoolProfile }: StatsSectionProps) {
               <Award className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-white">{SCHOOL_STATS.acreditation}</p>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">Akreditasi Madrasah</h4>
+              <p className="text-2xl font-black tracking-tight text-white">{schoolProfile?.bigStat1Number || SCHOOL_STATS.acreditation}</p>
+              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">{schoolProfile?.bigStat1Title || 'Akreditasi Madrasah'}</h4>
               <p className="text-[11px] text-slate-500 mt-1">{schoolProfile?.statAcreditation || 'Terakreditasi A (Sangat Baik), menjamin mutu pengajaran anak Anda.'}</p>
             </div>
           </div>
@@ -76,8 +76,8 @@ export default function StatsSection({ schoolProfile }: StatsSectionProps) {
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-white">{SCHOOL_STATS.passingRateToPTN}</p>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">Pendidikan Akhlak</h4>
+              <p className="text-2xl font-black tracking-tight text-white">{schoolProfile?.bigStat2Number || SCHOOL_STATS.passingRateToPTN}</p>
+              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">{schoolProfile?.bigStat2Title || 'Pendidikan Akhlak'}</h4>
               <p className="text-[11px] text-slate-500 mt-1">{schoolProfile?.statAdab || 'Siswa dibimbing membiasakan adab kesopanan dan doa sehari-hari.'}</p>
             </div>
           </div>
@@ -88,8 +88,8 @@ export default function StatsSection({ schoolProfile }: StatsSectionProps) {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-white">{SCHOOL_STATS.teacherS2S3}</p>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">Guru Ramah Anak</h4>
+              <p className="text-2xl font-black tracking-tight text-white">{schoolProfile?.bigStat3Number || SCHOOL_STATS.teacherS2S3}</p>
+              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">{schoolProfile?.bigStat3Title || 'Guru Ramah Anak'}</h4>
               <p className="text-[11px] text-slate-500 mt-1">{schoolProfile?.statTeachers || 'Dididik langsung oleh ustadz & ustadzah sabar, telaten, dan berdedikasi.'}</p>
             </div>
           </div>
@@ -100,8 +100,8 @@ export default function StatsSection({ schoolProfile }: StatsSectionProps) {
               <Trophy className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-white">{SCHOOL_STATS.nationalTrophies}</p>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">Hafalan Juz 30</h4>
+              <p className="text-2xl font-black tracking-tight text-white">{schoolProfile?.bigStat4Number || SCHOOL_STATS.nationalTrophies}</p>
+              <h4 className="text-xs font-bold text-slate-400 uppercase mt-0.5 tracking-wider">{schoolProfile?.bigStat4Title || 'Hafalan Juz 30'}</h4>
               <p className="text-[11px] text-slate-500 mt-1">{schoolProfile?.statTahfidz || 'Setiap lulusan ditargetkan hafal Juz Amma (Juz 30) dengan bacaan tartil.'}</p>
             </div>
           </div>

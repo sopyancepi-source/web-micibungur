@@ -23,7 +23,9 @@ import {
   EyeOff,
   ShieldAlert,
   GraduationCap,
-  Upload
+  Upload,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher } from '../types';
 
@@ -188,7 +190,8 @@ export default function AdminPortal({
     bio: '',
     biography: '',
     status: 'Aktif',
-    joinedYear: new Date().getFullYear().toString()
+    joinedYear: new Date().getFullYear().toString(),
+    order: undefined
   });
 
   const handleTeacherPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,13 +214,15 @@ export default function AdminPortal({
     if (editingTeacherId) {
       onUpdateTeacher({
         id: editingTeacherId,
-        ...teacherForm
+        ...teacherForm,
+        order: teacherForm.order !== undefined ? Number(teacherForm.order) : undefined
       });
       setEditingTeacherId(null);
     } else {
       onAddTeacher({
         id: `guru-${Date.now()}`,
-        ...teacherForm
+        ...teacherForm,
+        order: teacherForm.order !== undefined ? Number(teacherForm.order) : teachers.length + 1
       });
     }
     setTeacherForm({
@@ -228,7 +233,8 @@ export default function AdminPortal({
       bio: '',
       biography: '',
       status: 'Aktif',
-      joinedYear: new Date().getFullYear().toString()
+      joinedYear: new Date().getFullYear().toString(),
+      order: undefined
     });
   };
 
@@ -242,7 +248,8 @@ export default function AdminPortal({
       bio: teacher.bio || '',
       biography: teacher.biography || '',
       status: teacher.status,
-      joinedYear: teacher.joinedYear || ''
+      joinedYear: teacher.joinedYear || '',
+      order: teacher.order
     });
     if (teacher.photo && teacher.photo.startsWith('data:image')) {
       setTeacherImageSource('upload');
@@ -261,8 +268,69 @@ export default function AdminPortal({
       bio: '',
       biography: '',
       status: 'Aktif',
-      joinedYear: new Date().getFullYear().toString()
+      joinedYear: new Date().getFullYear().toString(),
+      order: undefined
     });
+  };
+
+  const handleMoveTeacherUp = async (teacher: Teacher) => {
+    const sortedList = [...teachers].sort((a, b) => {
+      const orderA = a.order !== undefined && a.order !== null ? Number(a.order) : 9999;
+      const orderB = b.order !== undefined && b.order !== null ? Number(b.order) : 9999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const index = sortedList.findIndex(t => t.id === teacher.id);
+    if (index > 0) {
+      const otherTeacher = sortedList[index - 1];
+      const updatedList = sortedList.map((t, idx) => {
+        if (idx === index) {
+          return { ...t, order: index }; // Swap position
+        }
+        if (idx === index - 1) {
+          return { ...t, order: index + 1 }; // Swap position
+        }
+        return { ...t, order: idx + 1 }; // Reset order sequentially
+      });
+
+      const movedTeacher = updatedList.find(t => t.id === teacher.id);
+      const swappedTeacher = updatedList.find(t => t.id === otherTeacher.id);
+      if (movedTeacher) await onUpdateTeacher(movedTeacher);
+      if (swappedTeacher) await onUpdateTeacher(swappedTeacher);
+    }
+  };
+
+  const handleMoveTeacherDown = async (teacher: Teacher) => {
+    const sortedList = [...teachers].sort((a, b) => {
+      const orderA = a.order !== undefined && a.order !== null ? Number(a.order) : 9999;
+      const orderB = b.order !== undefined && b.order !== null ? Number(b.order) : 9999;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const index = sortedList.findIndex(t => t.id === teacher.id);
+    if (index >= 0 && index < sortedList.length - 1) {
+      const otherTeacher = sortedList[index + 1];
+      const updatedList = sortedList.map((t, idx) => {
+        if (idx === index) {
+          return { ...t, order: index + 2 }; // Swap position
+        }
+        if (idx === index + 1) {
+          return { ...t, order: index + 1 }; // Swap position
+        }
+        return { ...t, order: idx + 1 }; // Reset order sequentially
+      });
+
+      const movedTeacher = updatedList.find(t => t.id === teacher.id);
+      const swappedTeacher = updatedList.find(t => t.id === otherTeacher.id);
+      if (movedTeacher) await onUpdateTeacher(movedTeacher);
+      if (swappedTeacher) await onUpdateTeacher(swappedTeacher);
+    }
   };
 
   // School Profile Form State
@@ -1202,7 +1270,7 @@ service cloud.firestore {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {/* Tahun Mulai Bertugas */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -1220,16 +1288,31 @@ service cloud.firestore {
                   {/* Status Keaktifan */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Status Keaktifan
+                      Keaktifan
                     </label>
                     <select
                       value={teacherForm.status}
                       onChange={(e) => setTeacherForm({ ...teacherForm, status: e.target.value })}
                       className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
                     >
-                      <option value="Aktif">Aktif Mengajar</option>
-                      <option value="Cuti">Cuti / Non-Aktif</option>
+                      <option value="Aktif">Aktif</option>
+                      <option value="Cuti">Cuti</option>
                     </select>
+                  </div>
+
+                  {/* No. Urut Tampilan */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      No. Urutan
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="No."
+                      min={1}
+                      value={teacherForm.order !== undefined ? teacherForm.order : ''}
+                      onChange={(e) => setTeacherForm({ ...teacherForm, order: e.target.value ? Number(e.target.value) : undefined })}
+                      className="w-full text-xs rounded-xl border border-slate-200 p-3 focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
                   </div>
                 </div>
 
@@ -1352,7 +1435,14 @@ service cloud.firestore {
 
               {teachers.length > 0 ? (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
-                  {teachers.map((teacher) => (
+                  {[...teachers].sort((a, b) => {
+                    const orderA = a.order !== undefined && a.order !== null ? Number(a.order) : 9999;
+                    const orderB = b.order !== undefined && b.order !== null ? Number(b.order) : 9999;
+                    if (orderA !== orderB) {
+                      return orderA - orderB;
+                    }
+                    return a.name.localeCompare(b.name);
+                  }).map((teacher, sortedIndex, sortedArr) => (
                     <div 
                       key={teacher.id} 
                       className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-emerald-200 hover:bg-emerald-50/10 transition-all"
@@ -1365,10 +1455,13 @@ service cloud.firestore {
                           referrerPolicy="no-referrer"
                         />
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-extrabold text-xs text-slate-800 leading-tight">
                               {teacher.name}
                             </h4>
+                            <span className="text-[9px] bg-emerald-50 text-emerald-800 font-bold px-1.5 py-0.5 rounded-md border border-emerald-100">
+                              Urut: {teacher.order !== undefined ? teacher.order : sortedIndex + 1}
+                            </span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
                               teacher.status === 'Aktif'
                                 ? 'bg-emerald-100 text-emerald-800'
@@ -1386,7 +1479,29 @@ service cloud.firestore {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 self-end sm:self-center">
+                      <div className="flex gap-2 self-end sm:self-center items-center">
+                        {/* Order/Layout Adjustment Controls */}
+                        <div className="flex gap-1 pr-1.5 border-r border-slate-200/60 mr-1">
+                          <button
+                            type="button"
+                            disabled={sortedIndex === 0}
+                            onClick={() => handleMoveTeacherUp(teacher)}
+                            className="p-1 rounded bg-slate-100 hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 cursor-pointer border border-slate-200/40"
+                            title="Pindahkan ke Atas"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={sortedIndex === sortedArr.length - 1}
+                            onClick={() => handleMoveTeacherDown(teacher)}
+                            className="p-1 rounded bg-slate-100 hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 cursor-pointer border border-slate-200/40"
+                            title="Pindahkan ke Bawah"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => handleStartEditTeacher(teacher)}
@@ -1644,6 +1759,28 @@ service cloud.firestore {
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 resize-y"
                   />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Headline Sambutan (Kutipan/Slogan)</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Ikhlas Beramal, Mengabdi Demi Pendidikan Akhlak..."
+                      value={profileForm.principalTitle || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, principalTitle: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Label Badge Penyelenggara Sambutan</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: KKG Kabupaten Bandung Barat"
+                      value={profileForm.principalSubtext || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, principalSubtext: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Group 3: Kontak & Alamat Madrasah */}
@@ -1696,51 +1833,809 @@ service cloud.firestore {
                 </div>
               </div>
 
-              {/* Group 4: Deskripsi Poin Keunggulan (Bento Grid) */}
+              {/* Group 4: Kustomisasi Angka Statistik Utama (Bento Grid) */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
-                  4. Penjelasan 4 Poin Mutu & Keunggulan
+                  4. Kustomisasi Angka Statistik Utama (Bento Grid)
                 </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Konfigurasikan 4 kotak pencapaian/statistik yang ditampilkan dalam grid di halaman depan. Anda dapat mengubah angka besar, judul statistik, dan deskripsi pendeknya.
+                </p>
+                
+                <div className="space-y-6">
+                  {/* Stat 1 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3 text-left">
+                    <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">Statistik 1: Akreditasi</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Angka / Nilai Besar</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat1Number || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat1Number: e.target.value })}
+                          placeholder="Contoh: A (Sangat Baik)"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Judul Ringkas</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat1Title || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat1Title: e.target.value })}
+                          placeholder="Contoh: Akreditasi Madrasah"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Deskripsi Pendek</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.statAcreditation}
+                          onChange={(e) => setProfileForm({ ...profileForm, statAcreditation: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stat 2 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3 text-left">
+                    <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">Statistik 2: Pendidikan Akhlak</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Angka / Nilai Besar</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat2Number || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat2Number: e.target.value })}
+                          placeholder="Contoh: 100% Terbina"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Judul Ringkas</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat2Title || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat2Title: e.target.value })}
+                          placeholder="Contoh: Pendidikan Akhlak"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Deskripsi Pendek</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.statAdab}
+                          onChange={(e) => setProfileForm({ ...profileForm, statAdab: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stat 3 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3 text-left">
+                    <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">Statistik 3: Guru Ramah Anak</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Angka / Nilai Besar</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat3Number || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat3Number: e.target.value })}
+                          placeholder="Contoh: 100% Kompeten"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Judul Ringkas</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat3Title || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat3Title: e.target.value })}
+                          placeholder="Contoh: Guru Ramah Anak"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Deskripsi Pendek</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.statTeachers}
+                          onChange={(e) => setProfileForm({ ...profileForm, statTeachers: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stat 4 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3 text-left">
+                    <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">Statistik 4: Hafalan Juz 30</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Angka / Nilai Besar</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat4Number || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat4Number: e.target.value })}
+                          placeholder="Contoh: 15+ Juara"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Judul Ringkas</label>
+                        <input
+                          type="text"
+                          value={profileForm.bigStat4Title || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, bigStat4Title: e.target.value })}
+                          placeholder="Contoh: Hafalan Juz 30"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Deskripsi Pendek</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.statTahfidz}
+                          onChange={(e) => setProfileForm({ ...profileForm, statTahfidz: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 4B: Kustomisasi Banner Utama (Hero Section) & Ticker */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  4b. Kustomisasi Banner Utama (Hero Section) & Ticker Live
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Edit badge informasi di bagian paling atas, gambar utama beranda, serta tiga segel kurikulum penunjang madrasah.
+                </p>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Poin 1: Akreditasi Madrasah (Penjelasan singkat)</label>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Pita Pengumuman Atas (Top Badge)</label>
                     <input
                       type="text"
-                      required
-                      value={profileForm.statAcreditation}
-                      onChange={(e) => setProfileForm({ ...profileForm, statAcreditation: e.target.value })}
+                      value={profileForm.heroTopBadge || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, heroTopBadge: e.target.value })}
+                      placeholder="Akreditasi A & Madrasah Ibtidaiyah Rujukan Karakter"
                       className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Poin 2: Pendidikan Akhlak & Adab (Penjelasan singkat)</label>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Overlay Banner Label (Badge Gambar)</label>
                     <input
                       type="text"
-                      required
-                      value={profileForm.statAdab}
-                      onChange={(e) => setProfileForm({ ...profileForm, statAdab: e.target.value })}
+                      value={profileForm.heroBadge || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, heroBadge: e.target.value })}
+                      placeholder="KAMPUS UNGGUL"
                       className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Poin 3: Guru & Pengajar Ramah Anak (Penjelasan singkat)</label>
+                </div>
+
+                {/* Hero Image File Upload */}
+                <div className="bg-emerald-50/30 rounded-2xl border border-emerald-100/50 p-4 space-y-3">
+                  <h5 className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">Gambar Utama Banner Beranda (Hero Image)</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Upload Banner Baru</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setIsUploading(true);
+                              const base64 = await compressImage(file, 1200, 800, 0.88);
+                              setProfileForm({ ...profileForm, heroImage: base64 });
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setIsUploading(false);
+                            }
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-xl p-1 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Atau Gunakan Link URL Gambar</span>
+                      <input
+                        type="text"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={profileForm.heroImage?.startsWith('data:') ? '' : (profileForm.heroImage || '')}
+                        onChange={(e) => setProfileForm({ ...profileForm, heroImage: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+                  {profileForm.heroImage && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-14 w-24 rounded-lg overflow-hidden border border-slate-200 shadow-sm shrink-0 bg-white">
+                        <img src={profileForm.heroImage} className="h-full w-full object-cover" alt="Hero Preview" referrerPolicy="no-referrer" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">Gambar Banner Terpilih</p>
+                        <p className="text-[10px] text-emerald-600 font-medium">
+                          {profileForm.heroImage.startsWith('data:') ? '✓ Terunggah (Base64)' : '✓ Link URL Eksternal'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3 Seals */}
+                <div className="space-y-3">
+                  <span className="text-xs font-bold text-slate-600 block">Segel Kurikulum / Lembaga Penunjang</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Segel Lembaga 1</label>
+                      <input
+                        type="text"
+                        value={profileForm.seal1 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, seal1: e.target.value })}
+                        placeholder="KURIKULUM KEMENAG RI"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Segel Lembaga 2</label>
+                      <input
+                        type="text"
+                        value={profileForm.seal2 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, seal2: e.target.value })}
+                        placeholder="BAN-SM TERAKREDITASI A"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Segel Lembaga 3</label>
+                      <input
+                        type="text"
+                        value={profileForm.seal3 || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, seal3: e.target.value })}
+                        placeholder="PEMBIASAAN TAHFIDZ JUZ 30"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live ticker counters */}
+                <div className="space-y-3 bg-amber-50/20 rounded-2xl border border-amber-100/50 p-4">
+                  <span className="text-xs font-extrabold text-amber-800 uppercase tracking-wider block">Kustomisasi Ticker Live (Kanan Atas)</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Ticker Stat 1 */}
+                    <div className="p-3 bg-white rounded-xl border border-slate-100 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-500 block uppercase">Ticker Live 1</span>
+                      <input
+                        type="text"
+                        value={profileForm.heroStat1Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, heroStat1Title: e.target.value })}
+                        placeholder="PENDAFTAR BULAN INI"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50 mb-1"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={profileForm.heroStat1Value || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, heroStat1Value: e.target.value })}
+                          placeholder="Nilai: +182"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                        <input
+                          type="text"
+                          value={profileForm.heroStat1Label || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, heroStat1Label: e.target.value })}
+                          placeholder="Label: Terverifikasi"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ticker Stat 2 */}
+                    <div className="p-3 bg-white rounded-xl border border-slate-100 space-y-2">
+                      <span className="text-[10px] font-bold text-slate-500 block uppercase">Ticker Live 2</span>
+                      <input
+                        type="text"
+                        value={profileForm.heroStat2Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, heroStat2Title: e.target.value })}
+                        placeholder="KUOTA JALUR BEASISWA"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50 mb-1"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={profileForm.heroStat2Value || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, heroStat2Value: e.target.value })}
+                          placeholder="Nilai: 14 Kursi"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                        <input
+                          type="text"
+                          value={profileForm.heroStat2Label || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, heroStat2Label: e.target.value })}
+                          placeholder="Label: Sisa"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 4C: Kustomisasi Peta Perjalanan Belajar (Roadmap) */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  4c. Kustomisasi Peta Perjalanan Belajar (Roadmap Siswa)
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Sesuaikan isi Peta Perjalanan Tumbuh Kembang murid. <span className="text-emerald-700 font-bold">Penting:</span> Pisahkan baris penjelasan dengan menekan tombol <kbd className="bg-slate-100 px-1 py-0.5 rounded border border-slate-200 text-[10px] font-mono">Enter</kbd> (satu poin per baris) agar otomatis membentuk poin peluru (&bull;).
+                </p>
+
+                <div className="space-y-4">
+                  {/* Stage 1 */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 space-y-3">
+                    <span className="text-xs font-bold text-slate-700 block">Fase 1: Kelas I - II (Awal Kemandirian & Iqra)</span>
+                    <div className="space-y-2.5">
+                      <input
+                        type="text"
+                        value={profileForm.roadmap1Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap1Title: e.target.value })}
+                        placeholder="Judul: Kelas I - II: Pembiasaan Adab & Iqra"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.roadmap1Points || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap1Points: e.target.value })}
+                        placeholder="Contoh:&#10;Belajar mengaji Iqra secara bertahap&#10;Penanaman karakter dasar 5S&#10;Pembelajaran ramah anak"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stage 2 */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 space-y-3">
+                    <span className="text-xs font-bold text-slate-700 block">Fase 2: Kelas III - IV (Kemandirian & Hafalan)</span>
+                    <div className="space-y-2.5">
+                      <input
+                        type="text"
+                        value={profileForm.roadmap2Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap2Title: e.target.value })}
+                        placeholder="Judul: Kelas III - IV: Kemandirian & Hafalan Juz Amma"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.roadmap2Points || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap2Points: e.target.value })}
+                        placeholder="Contoh:&#10;Mulai menghafal surat-surat pendek Juz 30&#10;Kegiatan Kepramukaan Siaga&#10;Eksplorasi ilmu sains dasar"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stage 3 */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/80 space-y-3">
+                    <span className="text-xs font-bold text-slate-700 block">Fase 3: Kelas V - VI (Kepemimpinan & Lulus Berkah)</span>
+                    <div className="space-y-2.5">
+                      <input
+                        type="text"
+                        value={profileForm.roadmap3Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap3Title: e.target.value })}
+                        placeholder="Judul: Kelas V - VI: Kepemimpinan & Kelulusan Berkah"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.roadmap3Points || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, roadmap3Points: e.target.value })}
+                        placeholder="Contoh:&#10;Pemantapan hafalan Juz 30 utama&#10;Bimbingan belajar intensif&#10;Bakti sosial cilik"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 4D: Kustomisasi Keunggulan Kompetitif (USPs) */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  4d. Kustomisasi Keunggulan Kompetitif (4 USP Utama)
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Ubah judul dan paragraf penjelasan bagi empat pilar keunggulan madrasah yang meyakinkan pendaftar.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* USP 1 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-left space-y-2">
+                    <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Keunggulan 1</span>
                     <input
                       type="text"
-                      required
-                      value={profileForm.statTeachers}
-                      onChange={(e) => setProfileForm({ ...profileForm, statTeachers: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      value={profileForm.usp1Title || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp1Title: e.target.value })}
+                      placeholder="Judul: Kurikulum Terpadu"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                    />
+                    <textarea
+                      rows={2}
+                      value={profileForm.usp1Desc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp1Desc: e.target.value })}
+                      placeholder="Penjelasan ringkas keunggulan"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Poin 4: Target Hafalan Juz Amma (Penjelasan singkat)</label>
+
+                  {/* USP 2 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-left space-y-2">
+                    <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Keunggulan 2</span>
                     <input
                       type="text"
-                      required
-                      value={profileForm.statTahfidz}
-                      onChange={(e) => setProfileForm({ ...profileForm, statTahfidz: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50"
+                      value={profileForm.usp2Title || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp2Title: e.target.value })}
+                      placeholder="Judul: Pembiasaan Ibadah"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
                     />
+                    <textarea
+                      rows={2}
+                      value={profileForm.usp2Desc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp2Desc: e.target.value })}
+                      placeholder="Penjelasan ringkas keunggulan"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                    />
+                  </div>
+
+                  {/* USP 3 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-left space-y-2">
+                    <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Keunggulan 3</span>
+                    <input
+                      type="text"
+                      value={profileForm.usp3Title || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp3Title: e.target.value })}
+                      placeholder="Judul: Rasio Kelas Nyaman"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                    />
+                    <textarea
+                      rows={2}
+                      value={profileForm.usp3Desc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp3Desc: e.target.value })}
+                      placeholder="Penjelasan ringkas keunggulan"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                    />
+                  </div>
+
+                  {/* USP 4 */}
+                  <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-left space-y-2">
+                    <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Keunggulan 4</span>
+                    <input
+                      type="text"
+                      value={profileForm.usp4Title || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp4Title: e.target.value })}
+                      placeholder="Judul: Sangat Ringan & Terjangkau"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold focus:border-emerald-500 focus:outline-none bg-white"
+                    />
+                    <textarea
+                      rows={2}
+                      value={profileForm.usp4Desc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, usp4Desc: e.target.value })}
+                      placeholder="Penjelasan ringkas keunggulan"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 4E: Kustomisasi Program & Pembiasaan Terbaik bagi Calon Siswa */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 text-left">
+                <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+                  4e. Kustomisasi Program & Pembiasaan Terbaik bagi Calon Siswa
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Sesuaikan judul utama, slogan, dan rincian program interaktif pada section "Program & Pembiasaan Terbaik" di halaman depan.
+                </p>
+
+                {/* Sub-group 1: Judul Utama Section */}
+                <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3">
+                  <span className="text-xs font-bold text-slate-700 block">Header & Deskripsi Section</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Tag Atas (Kecil)</label>
+                      <input
+                        type="text"
+                        value={profileForm.audienceSectionTag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, audienceSectionTag: e.target.value })}
+                        placeholder="PEMBELAJARAN BERFOKUS AKHLAK"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Judul Section Utama</label>
+                      <input
+                        type="text"
+                        value={profileForm.audienceSectionTitle || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, audienceSectionTitle: e.target.value })}
+                        placeholder="Program & Pembiasaan Terbaik bagi Calon Siswa"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white font-bold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Keterangan / Deskripsi Section</label>
+                    <textarea
+                      rows={2}
+                      value={profileForm.audienceSectionDesc || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, audienceSectionDesc: e.target.value })}
+                      placeholder="Silakan pilih profil Anda di bawah ini..."
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs focus:border-emerald-500 focus:outline-none bg-white resize-y"
+                    />
+                  </div>
+                </div>
+
+                {/* Sub-group 2: Jalur Orang Tua Siswa */}
+                <div className="p-4 bg-emerald-50/20 rounded-2xl border border-emerald-100/50 space-y-4">
+                  <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider block">Jalur Orang Tua Siswa (3 Kartu)</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Track 1 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-emerald-700 block uppercase">Kartu 1</span>
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack1Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack1Tag: e.target.value })}
+                        placeholder="Tag: 01 / SILATURAHMI"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack1Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack1Title: e.target.value })}
+                        placeholder="Judul: Monitoring Perkembangan Anak"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.parentTrack1Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack1Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 2 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-emerald-700 block uppercase">Kartu 2</span>
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack2Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack2Tag: e.target.value })}
+                        placeholder="Tag: 02 / AKHLAK MULIA"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack2Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack2Title: e.target.value })}
+                        placeholder="Judul: Bimbingan Sopan Santun"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.parentTrack2Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack2Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 3 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-emerald-700 block uppercase">Kartu 3</span>
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack3Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack3Tag: e.target.value })}
+                        placeholder="Tag: 03 / BEASISWA"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.parentTrack3Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack3Title: e.target.value })}
+                        placeholder="Judul: Biaya Terjangkau & Subsidi"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.parentTrack3Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, parentTrack3Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-group 3: Jalur Calon Siswa */}
+                <div className="p-4 bg-amber-50/20 rounded-2xl border border-amber-100/50 space-y-4">
+                  <span className="text-xs font-extrabold text-amber-800 uppercase tracking-wider block">Jalur Calon Siswa (3 Kartu)</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Track 1 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-amber-700 block uppercase">Kartu 1</span>
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack1Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack1Tag: e.target.value })}
+                        placeholder="Tag: 01 / KEAGAMAAN"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack1Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack1Title: e.target.value })}
+                        placeholder="Judul: Bimbingan Iqra & Al-Qur'an"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.studentTrack1Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack1Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 2 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-amber-700 block uppercase">Kartu 2</span>
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack2Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack2Tag: e.target.value })}
+                        placeholder="Tag: 02 / CERITA ISLAMI"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack2Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack2Title: e.target.value })}
+                        placeholder="Judul: Kisah Teladan Rasul"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.studentTrack2Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack2Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 3 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-amber-700 block uppercase">Kartu 3</span>
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack3Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack3Tag: e.target.value })}
+                        placeholder="Tag: 03 / BERMAIN"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.studentTrack3Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack3Title: e.target.value })}
+                        placeholder="Judul: Pramuka & Silat Tapak Suci"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.studentTrack3Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, studentTrack3Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-group 4: Jalur Alumni */}
+                <div className="p-4 bg-blue-50/20 rounded-2xl border border-blue-100/50 space-y-4">
+                  <span className="text-xs font-extrabold text-blue-800 uppercase tracking-wider block">Jalur Alumni (3 Kartu)</span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Track 1 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-blue-700 block uppercase">Kartu 1</span>
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack1Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack1Tag: e.target.value })}
+                        placeholder="Tag: 01 / JEJARING ALUMNI"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack1Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack1Title: e.target.value })}
+                        placeholder="Judul: Ikatan Alumni MI Cibungur"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.alumniTrack1Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack1Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 2 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-blue-700 block uppercase">Kartu 2</span>
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack2Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack2Tag: e.target.value })}
+                        placeholder="Tag: 02 / DONASI & KONTRIBUSI"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack2Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack2Title: e.target.value })}
+                        placeholder="Judul: Sumbangsih Almamater"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.alumniTrack2Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack2Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* Track 3 */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-100 space-y-2 text-left">
+                      <span className="text-[10px] font-bold text-blue-700 block uppercase">Kartu 3</span>
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack3Tag || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack3Tag: e.target.value })}
+                        placeholder="Tag: 03 / KISAH SUKSES"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.alumniTrack3Title || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack3Title: e.target.value })}
+                        placeholder="Judul: Motivasi & Inspirasi"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                      />
+                      <textarea
+                        rows={3}
+                        value={profileForm.alumniTrack3Desc || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, alumniTrack3Desc: e.target.value })}
+                        placeholder="Keterangan..."
+                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

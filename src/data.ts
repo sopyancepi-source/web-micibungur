@@ -152,7 +152,83 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   isParentAccessActive: true,
   registeredAdmins: ['sopyancepi@gmail.com'],
   adminPin: '999888',
-  guruPin: '123456'
+  guruPin: '123456',
+
+  // New Flexible Homepage customization fields
+  heroImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200',
+  heroBadge: 'KAMPUS UNGGUL',
+  heroTopBadge: 'Akreditasi A & Madrasah Ibtidaiyah Rujukan Karakter',
+  seal1: 'KURIKULUM KEMENAG RI',
+  seal2: 'BAN-SM TERAKREDITASI A',
+  seal3: 'PEMBIASAAN TAHFIDZ JUZ 30',
+  heroStat1Title: 'PENDAFTAR BULAN INI',
+  heroStat1Value: '+182',
+  heroStat1Label: 'Terverifikasi',
+  heroStat2Title: 'KUOTA JALUR BEASISWA',
+  heroStat2Value: '14 Kursi',
+  heroStat2Label: 'Sisa',
+  principalTitle: '"Ikhlas Beramal, Mengabdi Demi Pendidikan Akhlak & Karakter Anak"',
+  principalSubtext: 'KKG Kabupaten Bandung Barat',
+  
+  usp1Title: 'Kurikulum Terpadu',
+  usp1Desc: 'Sinergi apik Kurikulum Merdeka Nasional dengan kurikulum keagamaan Kementerian Agama Republik Indonesia.',
+  usp2Title: 'Pembiasaan Ibadah',
+  usp2Desc: 'Melatih shalat dhuha, shalat dzuhur berjamaah, zikir harian, hafalan hadits, serta doa fardhu sejak usia dini.',
+  usp3Title: 'Rasio Kelas Nyaman',
+  usp3Desc: 'Jumlah murid per kelas dibatasi proporsional agar guru dapat memberikan perhatian penuh, sabar, dan kasih sayang intensif.',
+  usp4Title: 'Sangat Ringan & Terjangkau',
+  usp4Desc: 'Biaya SPP bulanan yang ringan, subsidi khusus anak berprestasi, yatim, dhuafa, serta beasiswa komite komprehensif.',
+
+  roadmap1Title: 'Kelas I - II: Pembiasaan Adab & Iqra',
+  roadmap1Points: 'Belajar mengaji Iqra secara bertahap, lancar, dan tanpa paksaan\nPenanaman karakter dasar 5S (Senyum, Sapa, Salam, Sopan, Santun)\nPembelajaran motorik dasar, menggambar Islami, & calistung ramah anak',
+  roadmap2Title: 'Kelas III - IV: Kemandirian & Hafalan Juz Amma',
+  roadmap2Points: 'Mulai menghafal surat-surat pendek Juz 30 secara rutin berulang\nKegiatan Kepramukaan Siaga melatih kepemimpinan, kerjasama, dan disiplin\nEksplorasi ilmu sains dasar berbasis lingkungan sekitar madrasah',
+  roadmap3Title: 'Kelas V - VI: Kepemimpinan & Kelulusan Berkah',
+  roadmap3Points: 'Pemantapan hafalan Juz 30 sebagai mahkota kelulusan utama madrasah\nBimbingan belajar intensif menyongsong SMP / MTs favorit Kabupaten\nBakti sosial cilik, tadabbur alam, dan pembiasaan shalat berjamaah mandiri',
+
+  bigStat1Number: 'A (Sangat Baik)',
+  bigStat1Title: 'Akreditasi Madrasah',
+  bigStat2Number: '100% Terbina',
+  bigStat2Title: 'Pendidikan Akhlak',
+  bigStat3Number: '100% Kompeten',
+  bigStat3Title: 'Guru Ramah Anak',
+  bigStat4Number: '15+ Juara',
+  bigStat4Title: 'Hafalan Juz 30',
+
+  // Default values for Customizable Audience Tracks (Parents, Students, Alumni)
+  audienceSectionTag: 'PEMBELAJARAN BERFOKUS AKHLAK',
+  audienceSectionTitle: 'Program & Pembiasaan Terbaik bagi Calon Siswa',
+  audienceSectionDesc: 'Silakan pilih profil Anda di bawah ini untuk melihat komitmen pelayanan pendidikan serta nilai tambah yang kami hadirkan bagi keluarga Anda.',
+
+  parentTrack1Tag: '01 / SILATURAHMI',
+  parentTrack1Title: 'Monitoring Perkembangan Anak',
+  parentTrack1Desc: 'Kemudahan berkomunikasi langsung dengan wali kelas via WhatsApp untuk memantau ibadah shalat dan progres hafalan surat pendek anak di rumah.',
+  parentTrack2Tag: '02 / AKHLAK MULIA',
+  parentTrack2Title: 'Bimbingan Sopan Santun',
+  parentTrack2Desc: 'Kurikulum kami menekankan adab menghormati orang tua, menyayangi sesama, dan kemandirian perilaku anak dalam kehidupan sehari-hari.',
+  parentTrack3Tag: '03 / BEASISWA',
+  parentTrack3Title: 'Biaya Terjangkau & Subsidi',
+  parentTrack3Desc: 'Madrasah kami mendukung penuh seluruh lapisan masyarakat dengan skema subsidi silang, beasiswa komite, serta kemudahan biaya bagi anak yatim/piatu.',
+
+  studentTrack1Tag: '01 / KEAGAMAAN',
+  studentTrack1Title: "Bimbingan Iqra & Al-Qur'an",
+  studentTrack1Desc: 'Belajar mengaji dengan metode yang menyenangkan, dibimbing ustadz/ustadzah penyabar mulai dari nol hingga lancar membaca Al-Qur\'an.',
+  studentTrack2Tag: '02 / CERITA ISLAMI',
+  studentTrack2Title: 'Kisah Teladan Rasul',
+  studentTrack2Desc: 'Pembelajaran disisipi dongeng Islami menarik, menceritakan perjuangan nabi dan sahabat untuk menumbuhkan rasa cinta pada agama sejak kecil.',
+  studentTrack3Tag: '03 / BERMAIN',
+  studentTrack3Title: 'Pramuka & Silat Tapak Suci',
+  studentTrack3Desc: 'Ikuti kegiatan luar kelas yang asyik mulai dari Pramuka Siaga/Penggalang, mewarnai bersama, hingga olahraga bela diri fisik yang melatih ketangkasan.',
+
+  alumniTrack1Tag: '01 / JEJARING ALUMNI',
+  alumniTrack1Title: 'Ikatan Alumni MI Cibungur',
+  alumniTrack1Desc: 'Menjaga silaturahmi antar alumni lintas angkatan untuk bertukar info jenjang SMP/MTS, pondok pesantren, hingga kolaborasi demi kemajuan bersama.',
+  alumniTrack2Tag: '02 / DONASI & KONTRIBUSI',
+  alumniTrack2Title: 'Sumbangsih Almamater',
+  alumniTrack2Desc: 'Wadah bagi alumni yang ingin mendonasikan buku perpustakaan, peralatan ibadah, atau sumbangan sarana pendidikan bagi adik kelas yang membutuhkan.',
+  alumniTrack3Tag: '03 / KISAH SUKSES',
+  alumniTrack3Title: 'Motivasi & Inspirasi',
+  alumniTrack3Desc: 'Berbagi cerita sukses alumni yang melanjutkan ke pesantren terkemuka atau sekolah favorit untuk memotivasi adik-adik kelas yang masih belajar.'
 };
 
 export const INITIAL_TEACHERS: Teacher[] = [
@@ -165,7 +241,8 @@ export const INITIAL_TEACHERS: Teacher[] = [
     bio: 'Bertekad mendidik tunas bangsa yang berakhlakul karimah, disiplin, dan cinta Al-Qur\'an.',
     biography: 'Lahir di Bandung Barat, memiliki dedikasi lebih dari 10 tahun di dunia pendidikan Islam. Berpengalaman dalam pengelolaan kurikulum dan manajemen madrasah ibtidaiyah terpadu.',
     status: 'Aktif',
-    joinedYear: '2015'
+    joinedYear: '2015',
+    order: 1
   },
   {
     id: 'guru-2',
@@ -176,7 +253,8 @@ export const INITIAL_TEACHERS: Teacher[] = [
     bio: 'Sangat senang membimbing siswa kelas awal membaca Al-Qur\'an dengan metode yang ceria dan sabar.',
     biography: 'Fokus pada metode pengajaran menyenangkan (joyful learning) untuk anak usia emas, mengintegrasikan hafalan Al-Qur\'an juz 30 dengan pendidikan karakter yang bersahaja.',
     status: 'Aktif',
-    joinedYear: '2018'
+    joinedYear: '2018',
+    order: 2
   },
   {
     id: 'guru-3',
@@ -187,7 +265,8 @@ export const INITIAL_TEACHERS: Teacher[] = [
     bio: 'Menanamkan pemahaman ibadah harian sejak dini agar menjadi pembiasaan hidup yang kokoh.',
     biography: 'Spesialis dalam fiqih amaliyah praktis untuk anak-anak sekolah dasar. Senang memadukan praktek langsung gerakan shalat dan wudhu yang benar dengan pembiasaan sopan santun.',
     status: 'Aktif',
-    joinedYear: '2019'
+    joinedYear: '2019',
+    order: 3
   }
 ];
 
