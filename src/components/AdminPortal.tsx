@@ -28,9 +28,17 @@ import {
   ArrowDown,
   Building,
   Edit2,
-  Star
+  Star,
+  LogOut,
+  School,
+  Menu,
+  X,
+  FolderOpen,
+  Notebook,
+  BookOpen,
+  CheckSquare
 } from 'lucide-react';
-import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher, Testimonial, Facility, HistoricalFigure } from '../types';
+import { Activity, PPDBSubmission, Announcement, SchoolProfile, Teacher, Testimonial, Facility, HistoricalFigure, TeacherMenu, KabarKelas } from '../types';
 
 interface AdminPortalProps {
   activities: Activity[];
@@ -63,6 +71,15 @@ interface AdminPortalProps {
   onUpdateSchoolProfile?: (profile: SchoolProfile) => void;
   firebaseStatus?: 'loading' | 'connected' | 'error';
   firebaseError?: string | null;
+  onBackToHome?: () => void;
+  teacherMenus?: TeacherMenu[];
+  onAddTeacherMenu?: (menu: TeacherMenu) => void;
+  onUpdateTeacherMenu?: (menu: TeacherMenu) => void;
+  onDeleteTeacherMenu?: (id: string) => void;
+  kabarKelas?: KabarKelas[];
+  onAddKabarKelas?: (kabar: KabarKelas) => void;
+  onUpdateKabarKelas?: (kabar: KabarKelas) => void;
+  onDeleteKabarKelas?: (id: string) => void;
 }
 
 const PRESET_IMAGES = [
@@ -165,9 +182,19 @@ export default function AdminPortal({
   schoolProfile,
   onUpdateSchoolProfile,
   firebaseStatus,
-  firebaseError
+  firebaseError,
+  onBackToHome,
+  teacherMenus = [],
+  onAddTeacherMenu,
+  onUpdateTeacherMenu,
+  onDeleteTeacherMenu,
+  kabarKelas = [],
+  onAddKabarKelas,
+  onUpdateKabarKelas,
+  onDeleteKabarKelas
 }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru' | 'testimoni' | 'fasilitas' | 'tokoh'>('kegiatan');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'kegiatan' | 'pendaftar' | 'pengumuman' | 'profil' | 'guru' | 'testimoni' | 'fasilitas' | 'tokoh' | 'menu_guru' | 'kabar_kelas'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Parse custom grades list
   const gradesList = schoolProfile?.ppdbGrades
@@ -233,6 +260,83 @@ export default function AdminPortal({
     setInputPin('');
     setInputEmail('');
     setPinError(null);
+  };
+
+  // Teacher Menu Form States
+  const [menuTitle, setMenuTitle] = useState('');
+  const [menuDesc, setMenuDesc] = useState('');
+  const [menuUrl, setMenuUrl] = useState('');
+  const [menuIcon, setMenuIcon] = useState('CheckSquare');
+  const [menuRole, setMenuRole] = useState('Semua Guru');
+  const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
+
+  const handleSaveMenu = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!menuTitle || !menuUrl) return;
+
+    const data: TeacherMenu = {
+      id: editingMenuId || `menu-${Date.now()}`,
+      title: menuTitle,
+      description: menuDesc,
+      url: menuUrl,
+      icon: menuIcon,
+      targetRole: menuRole,
+      createdAt: new Date().toISOString()
+    };
+
+    if (editingMenuId) {
+      onUpdateTeacherMenu?.(data);
+    } else {
+      onAddTeacherMenu?.(data);
+    }
+
+    // Reset Form
+    setMenuTitle('');
+    setMenuDesc('');
+    setMenuUrl('');
+    setMenuIcon('CheckSquare');
+    setMenuRole('Semua Guru');
+    setEditingMenuId(null);
+  };
+
+  // Kabar Kelas Form States
+  const [kabarTitle, setKabarTitle] = useState('');
+  const [kabarContent, setKabarContent] = useState('');
+  const [kabarClass, setKabarClass] = useState('Kelas I');
+  const [kabarImage, setKabarImage] = useState('');
+  const [kabarAuthor, setKabarAuthor] = useState('');
+  const [kabarDate, setKabarDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [editingKabarId, setEditingKabarId] = useState<string | null>(null);
+  const [isKabarUploading, setIsKabarUploading] = useState(false);
+
+  const handleSaveKabar = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kabarTitle || !kabarContent) return;
+
+    const data: KabarKelas = {
+      id: editingKabarId || `kabar-${Date.now()}`,
+      title: kabarTitle,
+      content: kabarContent,
+      className: kabarClass,
+      image: kabarImage,
+      authorName: kabarAuthor || 'Ustadz/Ustadzah Wali Kelas',
+      date: kabarDate
+    };
+
+    if (editingKabarId) {
+      onUpdateKabarKelas?.(data);
+    } else {
+      onAddKabarKelas?.(data);
+    }
+
+    // Reset Form
+    setKabarTitle('');
+    setKabarContent('');
+    setKabarClass('Kelas I');
+    setKabarImage('');
+    setKabarAuthor('');
+    setKabarDate(new Date().toISOString().split('T')[0]);
+    setEditingKabarId(null);
   };
 
   // Historical Figures State & Handlers
@@ -927,288 +1031,564 @@ export default function AdminPortal({
               <li><strong>Super Admin</strong>: Email <strong className="font-mono text-amber-950">sopyancepi@gmail.com</strong> dengan PIN <strong className="font-mono bg-amber-200/50 px-1.5 py-0.5 rounded text-amber-950">999888</strong></li>
             </ul>
           </div>
+
+          {onBackToHome && (
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="mt-6 w-full py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-emerald-800 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <School className="h-4 w-4" />
+              <span>Kembali ke Beranda Utama</span>
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      {/* Portal Header */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 mb-8 relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 h-40 w-40 bg-emerald-500 rounded-full blur-3xl opacity-20 transform translate-x-10 -translate-y-10" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <span className="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/20 inline-flex items-center gap-1.5">
-              {userRole === 'admin' ? '🛡️ Super Admin Mode' : '📝 Guru & Staf Mode'}
-            </span>
-            <h2 className="text-2xl md:text-3xl font-black mt-3 tracking-tight">
-              {userRole === 'admin' ? 'Portal Administrator Utama' : 'Portal Guru & Staf Tata Usaha'}
-            </h2>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl mt-1.5">
-              {userRole === 'admin' 
-                ? 'Anda memiliki hak akses penuh untuk mengelola konten, menghapus postingan siapapun, serta menentukan aktif/tidaknya akses Alumni, Siswa, dan Orang Tua.' 
-                : 'Anda dapat mengupload kegiatan pembelajaran, menulis pengumuman baru, serta memproses data PPDB. Penghapusan postingan dan pengaturan akses dikendalikan oleh Super Admin.'}
-            </p>
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800 w-full">
+      {/* Sidebar Panel */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-200 shrink-0 flex flex-col border-r border-slate-800 transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:translate-x-0 md:static transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none`}>
+        {/* Sidebar Header */}
+        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/40">
+          <div className="flex items-center gap-3">
+            <School className="h-6 w-6 text-emerald-400" />
+            <div>
+              <h1 className="text-xs font-black text-white leading-none tracking-tight">MI CIBUNGUR I</h1>
+              <span className="text-[10px] font-bold text-emerald-400 tracking-wider uppercase mt-1 block">PORTAL KENDALI</span>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="shrink-0 px-5 py-3 text-xs font-bold bg-rose-600/20 hover:bg-rose-600/35 border border-rose-500/35 text-rose-200 rounded-xl transition-all cursor-pointer text-center"
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg transition-colors"
           >
-            Keluar Portal
+            <X className="h-5 w-5" />
           </button>
         </div>
-      </div>
 
-      {/* Firebase Integration Status Panel */}
-      <div className="mb-8">
-        {firebaseStatus === 'connected' ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
-            <div className="flex gap-3">
-              <div className="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-800 shrink-0">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span>Firebase Berhasil Terhubung!</span>
-                  <span className="bg-emerald-200 text-emerald-800 text-[9px] font-black uppercase px-2 py-0.5 rounded">Aktif & Sinkron</span>
-                </h4>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Selamat! Website MI Cibungur I kini terhubung secara penuh ke Project ID <strong className="text-slate-800">mi-cibungur-i</strong>. Seluruh data kegiatan, pendaftaran PPDB, pengumuman, dan kustomisasi profil madrasah Anda sekarang tersimpan aman dan permanen di Cloud Firestore database Anda.
-                </p>
-              </div>
-            </div>
-            <div className="shrink-0 text-right">
-              <span className="text-[10px] font-mono bg-slate-900 text-white px-3 py-1 rounded-lg">
-                mi-cibungur-i (Firestore)
-              </span>
-            </div>
-          </div>
-        ) : firebaseStatus === 'loading' ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 animate-pulse flex items-center gap-3 text-left">
-            <div className="h-4.5 w-4.5 bg-slate-200 rounded-full shrink-0" />
-            <div>
-              <p className="text-xs font-bold text-slate-700">Menghubungkan ke database Firebase...</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Sedang sinkronisasi data cloud untuk MI Cibungur I.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-left">
-            <div className="flex gap-3">
-              <div className="h-10 w-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-800 shrink-0">
-                <Sparkles className="h-5 w-5 text-amber-700" />
-              </div>
-              <div className="flex-grow">
-                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span>Penyimpanan Lokal Aktif (Fallback Mode)</span>
-                  <span className="bg-amber-200 text-amber-800 text-[9px] font-black uppercase px-2 py-0.5 rounded">Offline / LocalStorage</span>
-                </h4>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  Kami mendeteksi database Firebase Anda (Project ID: <strong>mi-cibungur-i</strong>) belum diaktifkan atau aturan keamanannya (Security Rules) menolak akses. Website tetap dapat digunakan secara normal dengan menyimpan seluruh data Anda secara otomatis di browser komputer ini.
-                </p>
-
-                {/* Helpful Instruction Accordion */}
-                <div className="mt-4 bg-white/70 rounded-xl p-4 border border-amber-200/50 text-xs">
-                  <h5 className="font-bold text-slate-900 flex items-center gap-1.5 mb-2">
-                    💡 Cara Mengaktifkan Firestore & Security Rules di Firebase Console Anda:
-                  </h5>
-                  <ol className="list-decimal pl-4 space-y-2 text-slate-600">
-                    <li>
-                      Di Firebase Console sebelah kiri, klik menu <strong>Build</strong> &rarr; <strong>Firestore Database</strong>.
-                    </li>
-                    <li>
-                      Klik tombol <strong>Create database</strong> (Buat database). Pilih wilayah terdekat (misal: <i>asia-southeast2</i> atau default) lalu klik Next.
-                    </li>
-                    <li>
-                      Pilih opsi <strong>Start in test mode</strong> (Mulai dalam mode pengujian) agar aturan keamanan awal mengizinkan website Anda membaca & menulis data, lalu klik <strong>Create</strong>.
-                    </li>
-                    <li>
-                      <i>Atau jika database sudah ada:</i> Masuk ke tab <strong>Rules</strong> di bagian atas Firestore, lalu ubah aturannya agar memperbolehkan akses baca/tulis sementara:
-                      <pre className="bg-slate-900 text-amber-400 p-2.5 rounded-lg mt-1 font-mono text-[10px] overflow-x-auto">
-{`rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}`}
-                      </pre>
-                    </li>
-                    <li>
-                      Klik tombol <strong>Publish</strong> di bagian kanan atas halaman Rules Firebase Anda. Lalu muat ulang halaman website ini untuk melihat status menjadi <strong className="text-emerald-700">Terhubung</strong> secara otomatis!
-                    </li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Tabs Menu */}
-      <div className="bg-slate-50 border border-slate-200/60 p-2.5 rounded-2xl mb-8">
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${userRole === 'admin' ? 'lg:grid-cols-7' : 'lg:grid-cols-5'} gap-2`}>
+        {/* Sidebar Menu Items */}
+        <nav className="flex-grow p-4 space-y-1.5 overflow-y-auto">
+          {/* Dashboard Item */}
           <button
-            onClick={() => setActiveTab('kegiatan')}
-            className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
-              activeTab === 'kegiatan'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+            onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+              activeTab === 'dashboard'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
-            <PlusCircle className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'kegiatan' ? 'text-white' : 'text-emerald-600'}`} />
-            <span className="truncate">Upload Kegiatan</span>
+            <div className="flex items-center gap-3">
+              <LayoutGrid className="h-4.5 w-4.5" />
+              <span>Dashboard</span>
+            </div>
           </button>
 
+          {/* PPDB Item */}
           <button
-            onClick={() => setActiveTab('pendaftar')}
-            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+            onClick={() => { setActiveTab('pendaftar'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
               activeTab === 'pendaftar'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Users className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'pendaftar' ? 'text-white' : 'text-emerald-600'}`} />
-              <span className="truncate">Kelola PPDB</span>
+            <div className="flex items-center gap-3">
+              <Users className="h-4.5 w-4.5" />
+              <span>Kelola PPDB</span>
             </div>
             {submissions.length > 0 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold shrink-0 shadow-sm ${
-                activeTab === 'pendaftar'
-                  ? 'bg-amber-400 text-slate-950 font-black'
-                  : 'bg-amber-500 text-white'
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                activeTab === 'pendaftar' ? 'bg-white text-emerald-950' : 'bg-amber-500 text-white animate-pulse'
               }`}>
                 {submissions.length}
               </span>
             )}
           </button>
 
+          {/* Guru Item */}
           <button
-            onClick={() => setActiveTab('pengumuman')}
-            className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
-              activeTab === 'pengumuman'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
-            }`}
-          >
-            <FileCheck className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'pengumuman' ? 'text-white' : 'text-emerald-600'}`} />
-            <span className="truncate">Tulis Pengumuman</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('guru')}
-            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+            onClick={() => { setActiveTab('guru'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
               activeTab === 'guru'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <GraduationCap className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'guru' ? 'text-white font-black' : 'text-emerald-600'}`} />
-              <span className="truncate">Kelola Guru</span>
+            <div className="flex items-center gap-3">
+              <GraduationCap className="h-4.5 w-4.5" />
+              <span>Kelola Guru</span>
             </div>
             {teachers.length > 0 && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
-                activeTab === 'guru'
-                  ? 'bg-white/20 text-white border-white/10'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'guru' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
               }`}>
                 {teachers.length}
               </span>
             )}
           </button>
 
-          {userRole === 'admin' && (
-            <button
-              onClick={() => setActiveTab('testimoni')}
-              className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
-                activeTab === 'testimoni'
-                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <MessageSquare className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'testimoni' ? 'text-white' : 'text-emerald-600'}`} />
-                <span className="truncate">Alumni & Testimoni</span>
-              </div>
-              {testimonials.length > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
-                  activeTab === 'testimoni'
-                    ? 'bg-white/20 text-white border-white/10'
-                    : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
-                }`}>
-                  {testimonials.length}
-                </span>
-              )}
-            </button>
-          )}
-
-          {userRole === 'admin' && (
-            <button
-              onClick={() => setActiveTab('tokoh')}
-              className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
-                activeTab === 'tokoh'
-                  ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-500 shadow-amber-600/20 shadow-md scale-[1.02]'
-                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-amber-700 hover:border-amber-200 hover:scale-[1.01]'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Star className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'tokoh' ? 'text-white' : 'text-amber-600'}`} />
-                <span className="truncate">Pendiri & Purna Guru</span>
-              </div>
-              {historicalFigures.length > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
-                  activeTab === 'tokoh'
-                    ? 'bg-white/20 text-white border-white/10'
-                    : 'bg-amber-50 text-amber-800 border-amber-100/50'
-                }`}>
-                  {historicalFigures.length}
-                </span>
-              )}
-            </button>
-          )}
-
+          {/* Fasilitas Item */}
           <button
-            onClick={() => setActiveTab('fasilitas')}
-            className={`group flex items-center justify-between gap-2 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
+            onClick={() => { setActiveTab('fasilitas'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
               activeTab === 'fasilitas'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Building className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'fasilitas' ? 'text-white' : 'text-emerald-600'}`} />
-              <span className="truncate">Kelola Fasilitas</span>
+            <div className="flex items-center gap-3">
+              <Building className="h-4.5 w-4.5" />
+              <span>Kelola Fasilitas</span>
             </div>
             {facilities.length > 0 && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold shrink-0 border ${
-                activeTab === 'fasilitas'
-                  ? 'bg-white/20 text-white border-white/10'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-100/50'
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'fasilitas' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
               }`}>
                 {facilities.length}
               </span>
             )}
           </button>
 
+          {/* Kegiatan Item */}
+          <button
+            onClick={() => { setActiveTab('kegiatan'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+              activeTab === 'kegiatan'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <PlusCircle className="h-4.5 w-4.5" />
+              <span>Kelola Berita/Kegiatan</span>
+            </div>
+            {activities.length > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'kegiatan' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {activities.length}
+              </span>
+            )}
+          </button>
+
+          {/* Pengumuman Item */}
+          <button
+            onClick={() => { setActiveTab('pengumuman'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+              activeTab === 'pengumuman'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <FileCheck className="h-4.5 w-4.5" />
+              <span>Kelola Pengumuman</span>
+            </div>
+          </button>
+
+          {/* Administrasi Guru Item (Guru & Admin) */}
+          <button
+            onClick={() => { setActiveTab('menu_guru'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+              activeTab === 'menu_guru'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <CheckSquare className="h-4.5 w-4.5" />
+              <span>Administrasi Guru</span>
+            </div>
+            {teacherMenus.length > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'menu_guru' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {teacherMenus.length}
+              </span>
+            )}
+          </button>
+
+          {/* Kelola Kabar Kelas Item (Guru & Admin) */}
+          <button
+            onClick={() => { setActiveTab('kabar_kelas'); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+              activeTab === 'kabar_kelas'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="h-4.5 w-4.5" />
+              <span>Kelola Kabar Kelas</span>
+            </div>
+            {kabarKelas.length > 0 && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'kabar_kelas' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {kabarKelas.length}
+              </span>
+            )}
+          </button>
+
+          {/* Tokoh & Pendiri Item (Super Admin only) */}
           {userRole === 'admin' && (
             <button
-              onClick={() => setActiveTab('profil')}
-              className={`group flex items-center gap-2.5 px-4 py-3 text-xs md:text-sm font-bold rounded-xl transition-all duration-300 cursor-pointer shadow-sm border ${
-                activeTab === 'profil'
-                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500 shadow-emerald-600/20 shadow-md scale-[1.02]'
-                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:scale-[1.01]'
+              onClick={() => { setActiveTab('tokoh'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'tokoh'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
               }`}
             >
-              <Sparkles className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${activeTab === 'profil' ? 'text-white' : 'text-emerald-600'}`} />
-              <span className="truncate">Edit Profil / Kustom</span>
+              <div className="flex items-center gap-3">
+                <Star className="h-4.5 w-4.5" />
+                <span>Pendiri & Tokoh</span>
+              </div>
             </button>
           )}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Testimoni Item (Super Admin only) */}
+          {userRole === 'admin' && (
+            <button
+              onClick={() => { setActiveTab('testimoni'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'testimoni'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-4.5 w-4.5" />
+                <span>Alumni & Testimoni</span>
+              </div>
+            </button>
+          )}
+
+          {/* Profil Item (Super Admin only) */}
+          {userRole === 'admin' && (
+            <button
+              onClick={() => { setActiveTab('profil'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'profil'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-4.5 w-4.5" />
+                <span>Pengaturan Sekolah</span>
+              </div>
+            </button>
+          )}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/20 space-y-2">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-xl transition-all cursor-pointer"
+            >
+              <School className="h-4.5 w-4.5 text-emerald-400" />
+              <span>Ke Website Utama</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-white hover:bg-rose-950/20 border border-transparent hover:border-rose-900/30 rounded-xl transition-all cursor-pointer"
+          >
+            <LogOut className="h-4.5 w-4.5" />
+            <span>Keluar Portal</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Drawer Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm md:hidden"
+        />
+      )}
+
+      {/* Main Panel Wrapper */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-hidden">
+        {/* Mobile Header Bar */}
+        <header className="h-16 md:hidden bg-white border-b border-slate-200/60 px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <span className="text-xs font-extrabold tracking-tight text-slate-800 uppercase">
+              {activeTab === 'dashboard' ? 'Dashboard Utama' : activeTab === 'pendaftar' ? 'Kelola PPDB' : activeTab === 'guru' ? 'Kelola Guru' : activeTab === 'fasilitas' ? 'Kelola Fasilitas' : activeTab === 'kegiatan' ? 'Kelola Berita' : activeTab === 'pengumuman' ? 'Kelola Pengumuman' : activeTab === 'tokoh' ? 'Pendiri & Tokoh' : activeTab === 'testimoni' ? 'Alumni & Testimoni' : 'Pengaturan'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 rounded-full uppercase">
+              {userRole === 'admin' ? 'SUPER' : 'GURU'}
+            </span>
+          </div>
+        </header>
+
+        {/* Desktop Top Nav Status Bar */}
+        <header className="hidden md:flex h-20 bg-white border-b border-slate-200/60 items-center justify-between px-8 shrink-0">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              {activeTab === 'dashboard' 
+                ? 'Dashboard Analitik & Kendali' 
+                : `Menu ${activeTab === 'pendaftar' ? 'Kelola PPDB' : activeTab === 'guru' ? 'Kelola Guru' : activeTab === 'fasilitas' ? 'Kelola Fasilitas' : activeTab === 'kegiatan' ? 'Kelola Berita' : activeTab === 'pengumuman' ? 'Kelola Pengumuman' : activeTab === 'tokoh' ? 'Pendiri & Tokoh' : activeTab === 'testimoni' ? 'Alumni & Testimoni' : 'Pengaturan'}`}
+            </h2>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Portal Pengelola Resmi Madrasah MI Cibungur I Bandung Barat
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* System Mode Tag */}
+            <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${userRole === 'admin' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+              {userRole === 'admin' ? 'Super Administrator' : 'Guru / Staf'}
+            </span>
+
+            {/* Back to website button */}
+            {onBackToHome && (
+              <button 
+                onClick={onBackToHome}
+                className="px-4 py-2 text-xs font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <School className="h-3.5 w-3.5" />
+                <span>Lihat Website</span>
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Scrollable Dashboard Body */}
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
+          {/* Main Content Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto w-full">
+            
+            {/* Tab 0: Dashboard Overview */}
+            {activeTab === 'dashboard' && (
+              <div className="lg:col-span-12 space-y-6 text-left">
+                {/* Quick Greeting Banner */}
+                <div className="bg-gradient-to-r from-emerald-800 to-emerald-950 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+                  <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500 rounded-full blur-2xl opacity-20 transform translate-x-8 -translate-y-8" />
+                  <div className="relative z-10">
+                    <span className="bg-emerald-500/30 text-emerald-200 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-500/20 inline-block mb-3">
+                      {userRole === 'admin' ? '🛡️ Super Admin' : '📝 Guru & Staf'}
+                    </span>
+                    <h3 className="text-xl md:text-2xl font-bold tracking-tight">
+                      Assalamu'alaikum, Pengelola Madrasah!
+                    </h3>
+                    <p className="text-emerald-100/80 text-xs md:text-sm mt-1 max-w-2xl">
+                      Selamat datang di panel kendali utama {schoolProfile?.schoolName || 'MI CIBUNGUR I'}. Di sini Anda dapat memantau pendaftaran siswa baru, kegiatan madrasah, pengumuman terbaru, serta profil guru dan fasilitas sekolah secara real-time.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metrics Summary Row */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Metric Card: PPDB */}
+                  <button 
+                    onClick={() => setActiveTab('pendaftar')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700">
+                        <Users className="h-5 w-5 transition-transform group-hover:scale-110" />
+                      </div>
+                      {submissions.filter(s => s.status === 'Menunggu Review').length > 0 && (
+                        <span className="bg-rose-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
+                          {submissions.filter(s => s.status === 'Menunggu Review').length} Baru
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4">
+                      <span className="text-2xl font-black text-slate-900 tracking-tight">{submissions.length}</span>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Pendaftar PPDB</p>
+                    </div>
+                  </button>
+
+                  {/* Metric Card: Guru */}
+                  <button 
+                    onClick={() => setActiveTab('guru')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all text-left group cursor-pointer"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-700">
+                      <GraduationCap className="h-5 w-5 transition-transform group-hover:scale-110" />
+                    </div>
+                    <div className="mt-4">
+                      <span className="text-2xl font-black text-slate-900 tracking-tight">{teachers.length}</span>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 font-sans">Guru & Staf</p>
+                    </div>
+                  </button>
+
+                  {/* Metric Card: Berita & Kegiatan */}
+                  <button 
+                    onClick={() => setActiveTab('kegiatan')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all text-left group cursor-pointer"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-700">
+                      <PlusCircle className="h-5 w-5 transition-transform group-hover:scale-110" />
+                    </div>
+                    <div className="mt-4">
+                      <span className="text-2xl font-black text-slate-900 tracking-tight">{activities.length}</span>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 font-sans">Kegiatan Siswa</p>
+                    </div>
+                  </button>
+
+                  {/* Metric Card: Fasilitas */}
+                  <button 
+                    onClick={() => setActiveTab('fasilitas')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all text-left group cursor-pointer"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-700">
+                      <Building className="h-5 w-5 transition-transform group-hover:scale-110" />
+                    </div>
+                    <div className="mt-4">
+                      <span className="text-2xl font-black text-slate-900 tracking-tight">{facilities.length}</span>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 font-sans">Fasilitas Kampus</p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Connectivity Panel */}
+                <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                      Status Sinkronisasi Database
+                    </h4>
+                    {firebaseStatus === 'connected' ? (
+                      <span className="bg-emerald-100 text-emerald-800 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Aktif & Sinkron</span>
+                    ) : (
+                      <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Lokal Offline</span>
+                    )}
+                  </div>
+                  {firebaseStatus === 'connected' ? (
+                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-950">Terhubung ke Cloud Firestore Database</p>
+                        <p className="text-[10px] text-emerald-700/80 mt-0.5">Seluruh perubahan disinkronkan secara aman, real-time, dan permanen di cloud (Project: mi-cibungur-i).</p>
+                      </div>
+                    </div>
+                  ) : firebaseStatus === 'loading' ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 animate-pulse flex items-center gap-3">
+                      <div className="h-4 w-4 bg-slate-300 rounded-full shrink-0" />
+                      <p className="text-xs font-bold text-slate-600">Sedang menyinkronkan data dengan server cloud Firebase...</p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
+                      <ShieldAlert className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-amber-950">Penyimpanan Lokal Aktif (Local Fallback)</p>
+                        <p className="text-[10px] text-amber-800/80 mt-0.5">Koneksi cloud Firestore belum terdeteksi. Seluruh perubahan Anda saat ini disimpan di browser lokal komputer ini (LocalStorage).</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Submissions & Activities Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* PPDB Submissions Card */}
+                  <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm flex flex-col h-full">
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-emerald-600" />
+                        Pendaftar PPDB Terbaru
+                      </h4>
+                      <button 
+                        onClick={() => setActiveTab('pendaftar')}
+                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Kelola PPDB</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                    </div>
+                    
+                    <div className="flex-grow space-y-3">
+                      {submissions.length === 0 ? (
+                        <div className="py-12 text-center text-xs text-slate-400">
+                          Belum ada pendaftaran PPDB yang masuk.
+                        </div>
+                      ) : (
+                        submissions.slice(0, 3).map((sub) => {
+                          const statusColors: Record<string, string> = {
+                            'Menunggu Review': 'bg-blue-50 text-blue-700 border-blue-100',
+                            'Jadwal Wawancara': 'bg-amber-50 text-amber-700 border-amber-100',
+                            'Diterima': 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                            'Ditolak': 'bg-rose-50 text-rose-700 border-rose-100',
+                          };
+                          return (
+                            <div key={sub.id} className="p-3 bg-slate-50/50 rounded-xl border border-slate-100/50 flex items-center justify-between text-xs">
+                              <div>
+                                <p className="font-bold text-slate-900">{sub.studentName}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  Pilihan: {sub.grade} &bull; {sub.phone}
+                                </p>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${statusColors[sub.status] || 'bg-slate-100 text-slate-600'}`}>
+                                {sub.status.toUpperCase()}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Activities Card */}
+                  <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm flex flex-col h-full">
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4 text-emerald-600" />
+                        Kegiatan Terbaru
+                      </h4>
+                      <button 
+                        onClick={() => setActiveTab('kegiatan')}
+                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Kelola Kegiatan</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                    </div>
+
+                    <div className="flex-grow space-y-3">
+                      {activities.length === 0 ? (
+                        <div className="py-12 text-center text-xs text-slate-400">
+                          Belum ada kegiatan yang diupload.
+                        </div>
+                      ) : (
+                        activities.slice(0, 3).map((act) => (
+                          <div key={act.id} className="p-3 bg-slate-50/50 rounded-xl border border-slate-100/50 flex items-center justify-between text-xs">
+                            <div className="min-w-0 flex-1 pr-3">
+                              <p className="font-bold text-slate-900 truncate">{act.title}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                Tanggal: {act.date} &bull; Oleh: {act.author}
+                              </p>
+                            </div>
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg font-semibold shrink-0">
+                              {act.category}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
         {/* Tab 1: Upload Kegiatan */}
         {activeTab === 'kegiatan' && (
           <>
@@ -4642,7 +5022,496 @@ service cloud.firestore {
             </form>
           </div>
         )}
+
+        {/* Tab 8: Administrasi Guru */}
+        {activeTab === 'menu_guru' && (
+          <div className="lg:col-span-12 space-y-6 text-left">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+              {/* Form Section (Super Admin only) */}
+              {userRole === 'admin' ? (
+                <div className="xl:col-span-4 bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm space-y-6 self-start">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 tracking-tight">
+                      {editingMenuId ? '✏️ Edit Link Administrasi' : '✨ Tambah Link Administrasi'}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                      Menu Portal Guru & Staf
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSaveMenu} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Nama Menu / Judul Link</label>
+                      <input
+                        type="text"
+                        required
+                        value={menuTitle}
+                        onChange={(e) => setMenuTitle(e.target.value)}
+                        placeholder="Contoh: Pengisian Absensi Harian"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Deskripsi Singkat</label>
+                      <textarea
+                        rows={2}
+                        value={menuDesc}
+                        onChange={(e) => setMenuDesc(e.target.value)}
+                        placeholder="Tuliskan petunjuk pengisian singkat di sini..."
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50 resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Alamat URL Link (Wajib Diawali https://)</label>
+                      <input
+                        type="url"
+                        required
+                        value={menuUrl}
+                        onChange={(e) => setMenuUrl(e.target.value)}
+                        placeholder="https://forms.gle/..."
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Pilih Desain Ikon</label>
+                        <select
+                          value={menuIcon}
+                          onChange={(e) => setMenuIcon(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 bg-white"
+                        >
+                          <option value="CheckSquare">Centang Absen</option>
+                          <option value="FolderOpen">Folder Bersama</option>
+                          <option value="Notebook">Jurnal Belajar</option>
+                          <option value="BookOpen">Buku Kurikulum</option>
+                          <option value="FileCheck">Evaluasi Kinerja</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Target Penerima</label>
+                        <select
+                          value={menuRole}
+                          onChange={(e) => setMenuRole(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 bg-white"
+                        >
+                          <option value="Semua Guru">Semua Guru/Staf</option>
+                          <option value="Guru Kelas">Khusus Guru Kelas</option>
+                          <option value="Guru Agama">Guru Mata Pelajaran</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      {editingMenuId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMenuId(null);
+                            setMenuTitle('');
+                            setMenuDesc('');
+                            setMenuUrl('');
+                            setMenuIcon('CheckSquare');
+                            setMenuRole('Semua Guru');
+                          }}
+                          className="flex-1 py-2.5 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        className="flex-grow py-2.5 text-xs font-bold uppercase tracking-wider bg-emerald-800 text-white hover:bg-emerald-950 rounded-xl transition-all cursor-pointer shadow-md shadow-emerald-900/10"
+                      >
+                        {editingMenuId ? 'Perbarui Link' : 'Tambahkan Link'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="xl:col-span-4 bg-gradient-to-br from-slate-900 to-slate-950 text-slate-300 rounded-3xl p-6 border border-slate-800 self-start text-left space-y-4">
+                  <div className="h-10 w-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center">
+                    <CheckSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white tracking-tight">Portal Administrasi Sekolah</h3>
+                    <p className="text-xs text-emerald-400/80 font-bold uppercase mt-1">Status Keanggotaan: Guru/Staf</p>
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-400">
+                    Gunakan daftar modul di sebelah kanan untuk mempercepat pengelolaan tugas administratif, pelaporan absen, Rencana Pelaksanaan Pembelajaran (RPP), dsb.
+                  </p>
+                  <p className="text-[10px] text-slate-500 italic">
+                    *Tautan administrasi ini dikonfigurasi dan dipelihara secara terpusat oleh Super Admin madrasah.
+                  </p>
+                </div>
+              )}
+
+              {/* Links Grid Section */}
+              <div className="xl:col-span-8 space-y-4">
+                <div className="flex justify-between items-center bg-white rounded-2xl border border-slate-200/50 p-4 shadow-xs">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Tautan Administrasi Guru ({teacherMenus.length})
+                  </span>
+                  {userRole === 'admin' && (
+                    <span className="text-[10px] bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 font-bold">
+                      Mode Edit Super Admin Aktif
+                    </span>
+                  )}
+                </div>
+
+                {teacherMenus.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/50 p-12 text-center">
+                    <CheckSquare className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-xs font-bold text-slate-500">Tautan administrasi belum dikonfigurasi</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Tautan eksternal Google Drive, Form, maupun Spreadsheet akan muncul di sini.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {teacherMenus.map((menu) => (
+                      <div
+                        key={menu.id}
+                        className="bg-white rounded-2xl border border-slate-200/50 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                              {menu.icon === 'FolderOpen' ? (
+                                <FolderOpen className="h-5 w-5 text-amber-500" />
+                              ) : menu.icon === 'Notebook' ? (
+                                <Notebook className="h-5 w-5 text-blue-500" />
+                              ) : menu.icon === 'BookOpen' ? (
+                                <BookOpen className="h-5 w-5 text-teal-600" />
+                              ) : menu.icon === 'FileCheck' ? (
+                                <FileCheck className="h-5 w-5 text-purple-500" />
+                              ) : (
+                                <CheckSquare className="h-5 w-5 text-emerald-600" />
+                              )}
+                            </div>
+                            <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">
+                              {menu.targetRole || 'Semua Guru'}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{menu.title}</h4>
+                          <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{menu.description}</p>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                          {userRole === 'admin' ? (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingMenuId(menu.id);
+                                  setMenuTitle(menu.title);
+                                  setMenuDesc(menu.description || '');
+                                  setMenuUrl(menu.url);
+                                  setMenuIcon(menu.icon || 'CheckSquare');
+                                  setMenuRole(menu.targetRole || 'Semua Guru');
+                                }}
+                                className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-emerald-700 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Link"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('Apakah Anda yakin ingin menghapus tautan ini?')) {
+                                    onDeleteTeacherMenu?.(menu.id);
+                                  }
+                                }}
+                                className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                title="Hapus Link"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div />
+                          )}
+
+                          <a
+                            href={menu.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-black text-emerald-800 hover:text-emerald-950 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100/80 px-3 py-1.5 rounded-lg border border-emerald-100 transition-colors"
+                          >
+                            <span>Buka Link</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 9: Kelola Kabar Kelas */}
+        {activeTab === 'kabar_kelas' && (
+          <div className="lg:col-span-12 space-y-6 text-left">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+              {/* Form Section */}
+              <div className="xl:col-span-4 bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm space-y-6 self-start">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 tracking-tight">
+                    {editingKabarId ? '✏️ Edit Kabar Aktivitas' : '✨ Bagikan Aktivitas Kelas'}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                    Kabar Kelas (Halaman Publik)
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveKabar} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Aktivitas</label>
+                    <input
+                      type="text"
+                      required
+                      value={kabarTitle}
+                      onChange={(e) => setKabarTitle(e.target.value)}
+                      placeholder="Contoh: Belajar Hafalan Surat Pendek"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50 font-semibold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Pilih Kelas</label>
+                      <select
+                        value={kabarClass}
+                        onChange={(e) => setKabarClass(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 bg-white"
+                      >
+                        <option value="Kelas I">Kelas I</option>
+                        <option value="Kelas II">Kelas II</option>
+                        <option value="Kelas III">Kelas III</option>
+                        <option value="Kelas IV">Kelas IV</option>
+                        <option value="Kelas V">Kelas V</option>
+                        <option value="Kelas VI">Kelas VI</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">Tanggal Kegiatan</label>
+                      <input
+                        type="date"
+                        required
+                        value={kabarDate}
+                        onChange={(e) => setKabarDate(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 bg-slate-50/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Nama Guru Pengajar / Penulis</label>
+                    <input
+                      type="text"
+                      required
+                      value={kabarAuthor}
+                      onChange={(e) => setKabarAuthor(e.target.value)}
+                      placeholder="Contoh: Ustadzah Siti Aminah, S.Pd."
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Isi Laporan / Cerita Aktivitas</label>
+                    <textarea
+                      rows={5}
+                      required
+                      value={kabarContent}
+                      onChange={(e) => setKabarContent(e.target.value)}
+                      placeholder="Ceritakan proses kegiatan belajar mengajar secara detail, riang, dan inspiratif..."
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 bg-slate-50/50 resize-y leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Image Upload Block */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Foto Kegiatan / Aktivitas</label>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Upload Device</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={isKabarUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  setIsKabarUploading(true);
+                                  const base64 = await compressImage(file, 900, 675, 0.88);
+                                  setKabarImage(base64);
+                                } catch (err) {
+                                  console.error(err);
+                                } finally {
+                                  setIsKabarUploading(false);
+                                }
+                              }
+                            }}
+                            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-lg p-1 bg-slate-50/50"
+                          />
+                          {isKabarUploading && (
+                            <p className="text-[9px] text-emerald-600 animate-pulse mt-0.5 font-bold">Sedang memproses...</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Tautan Web URL</span>
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={kabarImage.startsWith('data:') ? '' : kabarImage}
+                            onChange={(e) => setKabarImage(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none bg-slate-50/50"
+                          />
+                        </div>
+                      </div>
+
+                      {kabarImage && (
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 p-2 rounded-lg relative">
+                          <div className="h-10 w-14 rounded overflow-hidden border border-slate-200 bg-white shrink-0">
+                            <img src={kabarImage} className="h-full w-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-bold text-slate-800 truncate">Foto Terdeteksi</p>
+                            <p className="text-[8px] text-emerald-600 font-bold">✓ Siap dipublikasikan</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setKabarImage('')}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded-full absolute top-1 right-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    {editingKabarId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingKabarId(null);
+                          setKabarTitle('');
+                          setKabarContent('');
+                          setKabarClass('Kelas I');
+                          setKabarImage('');
+                          setKabarAuthor('');
+                          setKabarDate(new Date().toISOString().split('T')[0]);
+                        }}
+                        className="flex-1 py-2.5 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="flex-grow py-2.5 text-xs font-bold uppercase tracking-wider bg-emerald-800 text-white hover:bg-emerald-950 rounded-xl transition-all cursor-pointer shadow-md shadow-emerald-900/10"
+                    >
+                      {editingKabarId ? 'Perbarui Kabar' : 'Publikasikan Kabar'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Stories Feed Section */}
+              <div className="xl:col-span-8 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-200/50 p-4 shadow-xs flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Daftar Kabar Aktivitas ({kabarKelas.length})
+                  </span>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 rounded-full font-bold">
+                    Tampil di Web Publik
+                  </span>
+                </div>
+
+                {kabarKelas.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/50 p-12 text-center">
+                    <BookOpen className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-xs font-bold text-slate-500">Belum ada kabar kelas diterbitkan</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Gunakan formulir di sebelah kiri untuk memublikasikan aktivitas harian kelas.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {kabarKelas.map((kabar) => (
+                      <div
+                        key={kabar.id}
+                        className="bg-white rounded-2xl border border-slate-200/50 p-5 shadow-xs hover:shadow-sm transition-all flex flex-col md:flex-row gap-5"
+                      >
+                        {kabar.image && (
+                          <div className="h-28 w-full md:w-36 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-50">
+                            <img src={kabar.image} className="h-full w-full object-cover" alt="Kabar" referrerPolicy="no-referrer" />
+                          </div>
+                        )}
+
+                        <div className="flex-grow flex flex-col justify-between space-y-3">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[9px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-black uppercase">
+                                {kabar.className}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-bold">{kabar.date}</span>
+                              <span className="text-slate-300">&bull;</span>
+                              <span className="text-[10px] text-slate-500 font-bold font-sans">Oleh: {kabar.authorName}</span>
+                            </div>
+
+                            <h4 className="text-sm font-black text-slate-900 leading-snug">{kabar.title}</h4>
+                            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{kabar.content}</p>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingKabarId(kabar.id);
+                                setKabarTitle(kabar.title);
+                                setKabarContent(kabar.content);
+                                setKabarClass(kabar.className);
+                                setKabarImage(kabar.image || '');
+                                setKabarAuthor(kabar.authorName);
+                                setKabarDate(kabar.date);
+                              }}
+                              className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[10px] font-bold rounded-lg border border-slate-200/50 transition-colors cursor-pointer"
+                            >
+                              Edit Kabar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Apakah Anda yakin ingin menghapus kabar kelas ini dari publik?')) {
+                                  onDeleteKabarKelas?.(kabar.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold rounded-lg border border-rose-100 transition-colors cursor-pointer"
+                            >
+                              Hapus Kabar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+      </div>
+      </div>
+      </div>
   );
 }

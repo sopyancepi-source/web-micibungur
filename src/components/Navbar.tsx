@@ -14,6 +14,7 @@ interface NavbarProps {
   onToggleAdmin: () => void;
   latestImportantAnnouncement?: string;
   schoolProfile?: SchoolProfile;
+  onOpenAnnouncements?: () => void;
 }
 
 export default function Navbar({
@@ -22,7 +23,8 @@ export default function Navbar({
   isAdminLoggedIn,
   onToggleAdmin,
   latestImportantAnnouncement,
-  schoolProfile
+  schoolProfile,
+  onOpenAnnouncements
 }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -31,6 +33,7 @@ export default function Navbar({
     { id: 'sekilas', label: 'Sekilas' },
     { id: 'fasilitas', label: 'Fasilitas' },
     { id: 'guru', label: 'Profil Guru' },
+    { id: 'kabar-kelas', label: 'Kabar Kelas' },
     { id: 'kegiatan', label: 'Kegiatan Siswa' },
     { id: 'ppdb', label: 'Pendaftaran PPDB' },
   ];
@@ -39,10 +42,14 @@ export default function Navbar({
     <header className="sticky top-0 z-50 w-full bg-[#f1f8f5]/95 backdrop-blur-md border-b border-emerald-100/60 shadow-sm">
       {/* Announcement Bar */}
       {latestImportantAnnouncement && (
-        <div className="w-full bg-emerald-600 text-white text-xs py-2 px-4 overflow-hidden relative">
+        <div 
+          onClick={onOpenAnnouncements}
+          title="Klik untuk membuka Pusat Pengumuman & Informasi"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 px-4 overflow-hidden relative cursor-pointer group/marquee transition-colors duration-200"
+        >
           <div className="mx-auto max-w-7xl w-full flex items-center relative">
             {/* Solid background and wrapper for PENTING badge to hide text scrolling underneath */}
-            <div className="relative z-20 bg-emerald-600 flex items-center gap-2 pr-3.5 shrink-0 select-none">
+            <div className="relative z-20 bg-emerald-600 group-hover/marquee:bg-emerald-700 flex items-center gap-2 pr-3.5 shrink-0 select-none transition-colors duration-200">
               <span className="bg-amber-400 text-emerald-950 font-extrabold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest animate-pulse shadow-sm">
                 Penting
               </span>
@@ -52,23 +59,29 @@ export default function Navbar({
             {/* Scrolling container with absolute gradient overlays for the "titik hilang" fade effect */}
             <div className="flex-1 overflow-hidden relative h-5">
               {/* Left vanishing gradient */}
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-emerald-600 to-transparent z-10 pointer-events-none" />
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-emerald-600 group-hover/marquee:from-emerald-700 to-transparent z-10 pointer-events-none transition-colors duration-200" />
               {/* Right vanishing gradient */}
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-emerald-600 to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-emerald-600 group-hover/marquee:from-emerald-700 to-transparent z-10 pointer-events-none transition-colors duration-200" />
 
               {/* Seamless looping Marquee Track */}
               <div className="absolute inset-0 flex items-center">
                 <div className="flex gap-16 whitespace-nowrap animate-marquee shrink-0">
                   <div className="flex gap-16 items-center shrink-0">
-                    <span className="font-semibold tracking-wide text-emerald-50">{latestImportantAnnouncement}</span>
+                    <span className="font-semibold tracking-wide text-emerald-50 group-hover/marquee:underline decoration-amber-400 decoration-2 underline-offset-2">{latestImportantAnnouncement}</span>
                     <span className="text-amber-400 font-black select-none text-xs">✦</span>
                   </div>
                   <div className="flex gap-16 items-center shrink-0">
-                    <span className="font-semibold tracking-wide text-emerald-50">{latestImportantAnnouncement}</span>
+                    <span className="font-semibold tracking-wide text-emerald-50 group-hover/marquee:underline decoration-amber-400 decoration-2 underline-offset-2">{latestImportantAnnouncement}</span>
                     <span className="text-amber-400 font-black select-none text-xs">✦</span>
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Click prompt indicator */}
+            <div className="relative z-20 bg-emerald-600 group-hover/marquee:bg-emerald-700 pl-3 flex items-center text-[10px] text-amber-300 font-extrabold uppercase tracking-wider select-none shrink-0 transition-colors duration-200">
+              <span className="hidden sm:inline">Lihat Detail</span>
+              <span className="ml-1">&rarr;</span>
             </div>
           </div>
         </div>
@@ -129,26 +142,6 @@ export default function Navbar({
 
           {/* CTAs */}
           <div className="hidden md:flex items-center gap-3.5">
-            {/* Admin Switch */}
-            <button
-              onClick={() => {
-                setView('admin');
-              }}
-              id="nav-btn-admin"
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all duration-200 cursor-pointer ${
-                currentView === 'admin'
-                  ? 'bg-emerald-50/50 text-emerald-800 border-emerald-200 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-800'
-              }`}
-              title="Akses Portal Guru / Admin untuk Upload Kegiatan & Kelola Pendaftaran"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Portal Guru</span>
-              {isAdminLoggedIn && (
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              )}
-            </button>
-
             {/* PPDB Button */}
             <button
               onClick={() => setView('ppdb')}
@@ -175,13 +168,6 @@ export default function Navbar({
 
           {/* Mobile Menu Button */}
           <div className="flex items-center md:hidden gap-2">
-            <button
-              onClick={() => setView('admin')}
-              className="p-2 text-slate-500 hover:text-emerald-600"
-              title="Portal Guru"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               id="btn-mobile-menu"
@@ -220,16 +206,6 @@ export default function Navbar({
           </div>
 
           <div className="pt-4 border-t border-slate-100 space-y-2">
-            <button
-              onClick={() => {
-                setView('admin');
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 rounded-lg transition-all"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Akses Portal Guru / Admin</span>
-            </button>
             <button
               onClick={() => {
                 setView('ppdb');

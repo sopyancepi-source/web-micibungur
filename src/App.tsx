@@ -22,7 +22,9 @@ import {
   GraduationCap, 
   Calendar,
   Bell,
-  ArrowUpRight
+  ArrowUpRight,
+  X,
+  Megaphone
 } from 'lucide-react';
 import Navbar from './components/Navbar';
 import PPDBForm from './components/PPDBForm';
@@ -33,6 +35,7 @@ import TestimonialsSection from './components/TestimonialsSection';
 import ActivitiesShowcase from './components/ActivitiesShowcase';
 import TeacherProfile from './components/TeacherProfile';
 import SekilasMadrasah from './components/SekilasMadrasah';
+import KabarKelasView from './components/KabarKelasView';
 
 import { db } from './lib/firebase';
 import { 
@@ -45,7 +48,7 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 
-import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher, Facility, HistoricalFigure } from './types';
+import { Activity, PPDBSubmission, Announcement, Testimonial, SchoolProfile, Teacher, Facility, HistoricalFigure, TeacherMenu, KabarKelas } from './types';
 import { 
   INITIAL_ACTIVITIES, 
   INITIAL_FACILITIES, 
@@ -53,14 +56,83 @@ import {
   INITIAL_ANNOUNCEMENTS,
   DEFAULT_SCHOOL_PROFILE,
   INITIAL_TEACHERS,
-  INITIAL_HISTORICAL_FIGURES
+  INITIAL_HISTORICAL_FIGURES,
+  INITIAL_TEACHER_MENUS,
+  INITIAL_KABAR_KELAS
 } from './data';
 
 export default function App() {
-  const [currentView, setView] = useState<string>('beranda');
+  const [currentView, setView] = useState<string>(() => {
+    const hash = window.location.hash;
+    const path = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    if (hash === '#/admin-cibungur' || hash === '#admin-cibungur' || path === '/admin-cibungur' || searchParams.get('admin') === 'true') {
+      return 'admin';
+    }
+    if (hash === '#/ppdb' || hash === '#ppdb') return 'ppdb';
+    if (hash === '#/kabar-kelas' || hash === '#kabar-kelas') return 'kabar-kelas';
+    if (hash === '#/sekilas' || hash === '#sekilas') return 'sekilas';
+    if (hash === '#/fasilitas' || hash === '#fasilitas') return 'fasilitas';
+    if (hash === '#/guru' || hash === '#guru') return 'guru';
+    if (hash === '#/kegiatan' || hash === '#kegiatan') return 'kegiatan';
+    return 'beranda';
+  });
   const [audienceTrack, setAudienceTrack] = useState<'parent' | 'student' | 'alumni'>('parent');
 
   const [firebaseStatus, setFirebaseStatus] = useState<'loading' | 'connected' | 'error'>('loading');
+
+  // Sync view state to URL hash
+  useEffect(() => {
+    if (currentView === 'admin') {
+      if (window.location.hash !== '#/admin-cibungur') {
+        window.location.hash = '#/admin-cibungur';
+      }
+    } else if (currentView === 'beranda') {
+      if (window.location.hash !== '' && window.location.hash !== '#/beranda') {
+        window.location.hash = '';
+      }
+    } else {
+      const expectedHash = `#/${currentView}`;
+      if (window.location.hash !== expectedHash) {
+        window.location.hash = expectedHash;
+      }
+    }
+  }, [currentView]);
+
+  // Listen for browser navigation changes (Back/Forward, manual URL typing)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+
+      if (hash === '#/admin-cibungur' || hash === '#admin-cibungur' || path === '/admin-cibungur' || searchParams.get('admin') === 'true') {
+        setView('admin');
+      } else if (hash === '#/ppdb' || hash === '#ppdb') {
+        setView('ppdb');
+      } else if (hash === '#/kabar-kelas' || hash === '#kabar-kelas') {
+        setView('kabar-kelas');
+      } else if (hash === '#/sekilas' || hash === '#sekilas') {
+        setView('sekilas');
+      } else if (hash === '#/fasilitas' || hash === '#fasilitas') {
+        setView('fasilitas');
+      } else if (hash === '#/guru' || hash === '#guru') {
+        setView('guru');
+      } else if (hash === '#/kegiatan' || hash === '#kegiatan') {
+        setView('kegiatan');
+      } else if (hash === '#/beranda' || hash === '#beranda' || hash === '') {
+        setView('beranda');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
+  }, []);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
   // Load state from LocalStorage or fall back to Initial Mock Data
@@ -92,6 +164,9 @@ export default function App() {
     return DEFAULT_SCHOOL_PROFILE;
   });
 
+  const [showAnnouncementCenter, setShowAnnouncementCenter] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
   const [teachers, setTeachers] = useState<Teacher[]>(() => {
     const saved = localStorage.getItem('school_teachers');
     return saved ? JSON.parse(saved) : INITIAL_TEACHERS;
@@ -110,6 +185,16 @@ export default function App() {
   const [historicalFigures, setHistoricalFigures] = useState<HistoricalFigure[]>(() => {
     const saved = localStorage.getItem('school_historical_figures');
     return saved ? JSON.parse(saved) : INITIAL_HISTORICAL_FIGURES;
+  });
+
+  const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>(() => {
+    const saved = localStorage.getItem('school_teacher_menus');
+    return saved ? JSON.parse(saved) : INITIAL_TEACHER_MENUS;
+  });
+
+  const [kabarKelas, setKabarKelas] = useState<KabarKelas[]>(() => {
+    const saved = localStorage.getItem('school_kabar_kelas');
+    return saved ? JSON.parse(saved) : INITIAL_KABAR_KELAS;
   });
 
   // Try to load and seed Firebase on Mount
@@ -229,6 +314,36 @@ export default function App() {
           setHistoricalFigures(INITIAL_HISTORICAL_FIGURES);
         }
 
+        // 9. Fetch teacher menus
+        const menusCol = collection(db, 'teacher_menus');
+        const menusSnap = await getDocs(menusCol);
+        let activeMenus: TeacherMenu[] = [];
+        if (!menusSnap.empty) {
+          activeMenus = menusSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as TeacherMenu[];
+          setTeacherMenus(activeMenus);
+        } else {
+          // Seed
+          for (const m of INITIAL_TEACHER_MENUS) {
+            await setDoc(doc(db, 'teacher_menus', m.id), m);
+          }
+          setTeacherMenus(INITIAL_TEACHER_MENUS);
+        }
+
+        // 10. Fetch kabar kelas
+        const kabarCol = collection(db, 'kabar_kelas');
+        const kabarSnap = await getDocs(kabarCol);
+        let activeKabar: KabarKelas[] = [];
+        if (!kabarSnap.empty) {
+          activeKabar = kabarSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as KabarKelas[];
+          setKabarKelas(activeKabar);
+        } else {
+          // Seed
+          for (const k of INITIAL_KABAR_KELAS) {
+            await setDoc(doc(db, 'kabar_kelas', k.id), k);
+          }
+          setKabarKelas(INITIAL_KABAR_KELAS);
+        }
+
         setFirebaseStatus('connected');
         setFirebaseError(null);
       } catch (err: any) {
@@ -273,6 +388,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_historical_figures', JSON.stringify(historicalFigures));
   }, [historicalFigures]);
+
+  useEffect(() => {
+    localStorage.setItem('school_teacher_menus', JSON.stringify(teacherMenus));
+  }, [teacherMenus]);
+
+  useEffect(() => {
+    localStorage.setItem('school_kabar_kelas', JSON.stringify(kabarKelas));
+  }, [kabarKelas]);
 
   // Fallback for deactivated audience tracks
   useEffect(() => {
@@ -528,6 +651,74 @@ export default function App() {
     }
   };
 
+  // Teacher Menus CRUD Handlers
+  const handleAddTeacherMenu = async (newMenu: TeacherMenu) => {
+    setTeacherMenus([newMenu, ...teacherMenus]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'teacher_menus', newMenu.id), newMenu);
+      } catch (err) {
+        console.error('Error writing teacher menu to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateTeacherMenu = async (updatedMenu: TeacherMenu) => {
+    setTeacherMenus(teacherMenus.map(m => m.id === updatedMenu.id ? updatedMenu : m));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'teacher_menus', updatedMenu.id), updatedMenu);
+      } catch (err) {
+        console.error('Error updating teacher menu in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteTeacherMenu = async (id: string) => {
+    setTeacherMenus(teacherMenus.filter(m => m.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'teacher_menus', id));
+      } catch (err) {
+        console.error('Error deleting teacher menu from Firebase:', err);
+      }
+    }
+  };
+
+  // Kabar Kelas CRUD Handlers
+  const handleAddKabarKelas = async (newKabar: KabarKelas) => {
+    setKabarKelas([newKabar, ...kabarKelas]);
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'kabar_kelas', newKabar.id), newKabar);
+      } catch (err) {
+        console.error('Error writing kabar kelas to Firebase:', err);
+      }
+    }
+  };
+
+  const handleUpdateKabarKelas = async (updatedKabar: KabarKelas) => {
+    setKabarKelas(kabarKelas.map(k => k.id === updatedKabar.id ? updatedKabar : k));
+    if (firebaseStatus === 'connected') {
+      try {
+        await setDoc(doc(db, 'kabar_kelas', updatedKabar.id), updatedKabar);
+      } catch (err) {
+        console.error('Error updating kabar kelas in Firebase:', err);
+      }
+    }
+  };
+
+  const handleDeleteKabarKelas = async (id: string) => {
+    setKabarKelas(kabarKelas.filter(k => k.id !== id));
+    if (firebaseStatus === 'connected') {
+      try {
+        await deleteDoc(doc(db, 'kabar_kelas', id));
+      } catch (err) {
+        console.error('Error deleting kabar kelas from Firebase:', err);
+      }
+    }
+  };
+
   const handleUpdateSchoolProfile = async (newProfile: SchoolProfile) => {
     setSchoolProfile(newProfile);
     if (firebaseStatus === 'connected') {
@@ -539,8 +730,11 @@ export default function App() {
     }
   };
 
-  // Find latest important announcement to show in running header
-  const importantAnnouncement = announcements.find(ann => ann.isImportant)?.title;
+  // Find all active important announcements and join them to show in the running marquee header
+  const activeImportantAnnouncements = announcements.filter(ann => ann.isImportant);
+  const importantAnnouncement = activeImportantAnnouncements.length > 0
+    ? activeImportantAnnouncements.map(ann => ann.title).join('  ✦  ')
+    : undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/40 text-slate-800 selection:bg-emerald-500 selection:text-white">
@@ -552,6 +746,7 @@ export default function App() {
         onToggleAdmin={() => setView('admin')} 
         latestImportantAnnouncement={importantAnnouncement}
         schoolProfile={schoolProfile}
+        onOpenAnnouncements={() => setShowAnnouncementCenter(true)}
       />
 
       <main className="flex-grow">
@@ -687,6 +882,67 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* NEW SECTION: Papan Pengumuman Madrasah */}
+            <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+              <div className="bg-gradient-to-br from-emerald-50/50 via-white to-slate-50/30 rounded-3xl border border-emerald-100 p-6 md:p-10 shadow-sm text-left">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 border-b border-emerald-100/60 pb-4 gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-100/60 text-emerald-900 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-2 shadow-xs">
+                      <Bell className="h-3.5 w-3.5 text-amber-500 animate-bounce" />
+                      <span>Informasi Terkini</span>
+                    </div>
+                    <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 mt-1">Papan Pengumuman Madrasah</h2>
+                  </div>
+                  <button 
+                    onClick={() => setShowAnnouncementCenter(true)} 
+                    className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1 mt-2 md:mt-0 cursor-pointer group bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl border border-emerald-100 transition-all shadow-xs"
+                  >
+                    <span>Buka Pusat Informasi ({announcements.length})</span>
+                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {announcements.length === 0 ? (
+                    <div className="col-span-2 text-center py-12 text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
+                      Belum ada pengumuman yang diterbitkan saat ini.
+                    </div>
+                  ) : (
+                    announcements.slice(0, 4).map((ann) => (
+                      <div 
+                        key={ann.id}
+                        onClick={() => setSelectedAnnouncement(ann)}
+                        className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer flex flex-col justify-between group text-left relative overflow-hidden"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-4 mb-3">
+                            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" /> {ann.date}
+                            </span>
+                            {ann.isImportant && (
+                              <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse border border-amber-200">
+                                Penting
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-extrabold text-sm text-slate-950 group-hover:text-emerald-800 line-clamp-2 transition-colors leading-snug">
+                            {ann.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                            {ann.content}
+                          </p>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[11px] text-emerald-800 font-bold group-hover:text-emerald-950 transition-colors">
+                          <span>Baca Detail Pengumuman</span>
+                          <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </section>
@@ -1132,6 +1388,11 @@ export default function App() {
           <ActivitiesShowcase activities={activities} setView={setView} />
         )}
 
+        {/* VIEW: KABAR KELAS */}
+        {currentView === 'kabar-kelas' && (
+          <KabarKelasView kabarKelas={kabarKelas} />
+        )}
+
         {/* VIEW 4: PENDAFTARAN PPDB */}
         {currentView === 'ppdb' && (
           <PPDBForm onRegisterSubmit={handleRegisterSubmit} schoolProfile={schoolProfile} />
@@ -1170,6 +1431,15 @@ export default function App() {
             onUpdateSchoolProfile={handleUpdateSchoolProfile}
             firebaseStatus={firebaseStatus}
             firebaseError={firebaseError}
+            onBackToHome={() => setView('beranda')}
+            teacherMenus={teacherMenus}
+            onAddTeacherMenu={handleAddTeacherMenu}
+            onUpdateTeacherMenu={handleUpdateTeacherMenu}
+            onDeleteTeacherMenu={handleDeleteTeacherMenu}
+            kabarKelas={kabarKelas}
+            onAddKabarKelas={handleAddKabarKelas}
+            onUpdateKabarKelas={handleUpdateKabarKelas}
+            onDeleteKabarKelas={handleDeleteKabarKelas}
           />
         )}
 
@@ -1219,9 +1489,14 @@ export default function App() {
               <ul className="space-y-2.5 text-xs text-slate-400">
                 <li><button onClick={() => setView('beranda')} className="hover:text-emerald-500 transition-colors cursor-pointer">Profil Beranda</button></li>
                 <li><button onClick={() => setView('fasilitas')} className="hover:text-emerald-500 transition-colors cursor-pointer">Fasilitas Kampus</button></li>
+                <li><button onClick={() => setView('kabar-kelas')} className="hover:text-emerald-500 transition-colors cursor-pointer">Kabar Kelas</button></li>
                 <li><button onClick={() => setView('kegiatan')} className="hover:text-emerald-500 transition-colors cursor-pointer">Dokumentasi Kegiatan</button></li>
                 <li><button onClick={() => setView('ppdb')} className="hover:text-emerald-500 transition-colors cursor-pointer">Pendaftaran PPDB {schoolProfile.ppdbYear || '2026'}</button></li>
-                <li><button onClick={() => setView('admin')} className="hover:text-emerald-500 transition-colors cursor-pointer">Portal Admin Guru & Staff</button></li>
+                <li className="pt-2 border-t border-slate-800/60 mt-2">
+                  <button onClick={() => setView('admin')} className="text-amber-400 hover:text-amber-300 font-extrabold flex items-center gap-1 cursor-pointer">
+                    🔑 Pintu Masuk Guru & Staf
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -1276,6 +1551,133 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* 1. PUSAT PENGUMUMAN MODAL */}
+      {showAnnouncementCenter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs animate-fade-in" onClick={() => setShowAnnouncementCenter(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col z-10 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/15">
+                  <Megaphone className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-extrabold text-base text-slate-950">Pusat Informasi & Pengumuman</h3>
+                  <p className="text-[10px] font-bold tracking-wider text-emerald-800 uppercase">Kabar Resmi MI Cibungur I</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAnnouncementCenter(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body / Scrollable List */}
+            <div className="p-6 overflow-y-auto space-y-4 max-h-[50vh] scrollbar-thin">
+              {announcements.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">
+                  Belum ada pengumuman yang diterbitkan saat ini.
+                </div>
+              ) : (
+                announcements.map((ann) => (
+                  <div 
+                    key={ann.id}
+                    onClick={() => {
+                      setSelectedAnnouncement(ann);
+                    }}
+                    className="p-5 bg-slate-50/50 hover:bg-emerald-50/30 border border-slate-100 hover:border-emerald-200 rounded-2xl cursor-pointer transition-all text-left group"
+                  >
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                      <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" /> {ann.date}
+                      </span>
+                      {ann.isImportant && (
+                        <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse border border-amber-200">
+                          Penting
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-sm text-slate-950 group-hover:text-emerald-800 transition-colors leading-snug">
+                      {ann.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                      {ann.content}
+                    </p>
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100/50 flex items-center justify-between text-[11px] text-emerald-800 font-bold group-hover:text-emerald-950">
+                      <span>Baca Pengumuman Lengkap</span>
+                      <span>&rarr;</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setShowAnnouncementCenter(false)}
+                className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. DETAIL PENGUMUMAN MODAL */}
+      {selectedAnnouncement && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs animate-fade-in" onClick={() => setSelectedAnnouncement(null)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col z-10 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-gradient-to-br from-slate-50 to-white text-left">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> {selectedAnnouncement.date}
+                  </span>
+                  {selectedAnnouncement.isImportant && (
+                    <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-amber-200 animate-pulse">
+                      Penting
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-extrabold text-base text-slate-950 leading-snug">
+                  {selectedAnnouncement.title}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0 ml-4 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[45vh] text-left">
+              <div className="text-slate-600 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                {selectedAnnouncement.content}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                className="px-5 py-2.5 text-xs font-extrabold uppercase tracking-widest text-white bg-emerald-800 hover:bg-emerald-900 rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

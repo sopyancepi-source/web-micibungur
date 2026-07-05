@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Activity, Facility, Testimonial, Announcement, SchoolProfile, Teacher, HistoricalFigure } from './types';
+import { Activity, Facility, Testimonial, Announcement, SchoolProfile, Teacher, HistoricalFigure, TeacherMenu, KabarKelas } from './types';
 
 export const INITIAL_ACTIVITIES: Activity[] = [
   {
@@ -341,5 +341,54 @@ export const INITIAL_HISTORICAL_FIGURES: HistoricalFigure[] = [
     order: 2
   }
 ];
+
+export const INITIAL_TEACHER_MENUS: TeacherMenu[] = [
+  {
+    id: 'menu-1',
+    title: 'E-Absensi Guru',
+    description: 'Pencatatan kehadiran harian guru dan staf MI Cibungur I.',
+    url: 'https://forms.gle/mockAbsenGuruCibungur',
+    icon: 'CheckSquare',
+    targetRole: 'Semua Guru'
+  },
+  {
+    id: 'menu-2',
+    title: 'Folder RPP & Silabus',
+    description: 'Akses folder Google Drive bersama untuk mengunggah rencana pengajaran.',
+    url: 'https://drive.google.com/drive/folders/mockRPPCibungur',
+    icon: 'FolderOpen',
+    targetRole: 'Semua Guru'
+  },
+  {
+    id: 'menu-3',
+    title: 'Jurnal Kelas Digital',
+    description: 'Input progres pembelajaran harian siswa sesuai jadwal kurikulum.',
+    url: 'https://docs.google.com/spreadsheets/d/mockJurnalCibungur/edit',
+    icon: 'Notebook',
+    targetRole: 'Semua Guru'
+  }
+];
+
+export const INITIAL_KABAR_KELAS: KabarKelas[] = [
+  {
+    id: 'kabar-1',
+    title: 'Belajar Membaca Iqra dengan Riang Gembira',
+    content: 'Alhamdulillah, hari ini anak-anak Kelas I MI Cibungur I belajar mengaji Iqra bersama dengan penuh keceriaan. Ustadzah Siti Aminah membimbing mereka dengan metode bernyanyi dan permainan kartu agar anak-anak lancar melafalkan huruf hijaiyah tanpa rasa jenuh.',
+    date: '2026-07-01',
+    className: 'Kelas I',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600',
+    authorName: 'Ustadzah Siti Aminah, S.Pd.'
+  },
+  {
+    id: 'kabar-2',
+    title: 'Praktik Gerakan Shalat Fardhu Berjamaah',
+    content: 'Siswa Kelas V melaksanakan bimbingan fiqih praktis dengan melakukan gerakan shalat wajib yang benar di Masjid Al-Ikhlas. Pembiasaan gerakan dan bacaan shalat yang tuma\'ninah sangat ditekankan agar mereka terbiasa shalat dengan khusyuk di rumah masing-masing.',
+    date: '2026-06-28',
+    className: 'Kelas V',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600',
+    authorName: 'Ustadz Ahmad Fauzi, S.Ag.'
+  }
+];
+
 
 

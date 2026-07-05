@@ -231,4 +231,26 @@ export interface HistoricalFigure {
   order?: number; // Sorting/layout order
 }
 
+export interface TeacherMenu {
+  id: string;
+  title: string;
+  description?: string;
+  url: string;
+  icon?: string;
+  targetRole?: string; // "Semua Kelas" or "Kelas I" etc.
+  createdAt?: string;
+}
+
+export interface KabarKelas {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  className: string; // "Kelas I", "Kelas II", "Kelas III", "Kelas IV", "Kelas V", "Kelas VI"
+  image?: string; // Base64 or URL
+  authorName: string; // Name of teacher posting this
+  authorId?: string; // ID of teacher posting this
+}
+
+
 
