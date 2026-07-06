@@ -153,6 +153,10 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   registeredAdmins: ['sopyancepi@gmail.com'],
   adminPin: '685f188e4f25af63603dc5b579b31090f459381a242bf7002c8a8e8ea322a4ef', // Hash of 999888
   guruPin: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', // Hash of 123456
+  principalEmail: 'kepala@cibungur1.sch.id',
+  principalPin: '2da37a54c319f44b57f2f7fbf6b8feb854f60dcfa87d9671cf185e4dc19e9e07', // Hash of kepala123
+  lastBackup: '',
+  backupHistory: [],
 
   // New Flexible Homepage customization fields
   heroImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200',
@@ -245,15 +249,18 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   // Customizable PPDB defaults
   ppdbTitle: 'Pendaftaran Siswa Baru MI Cibungur I',
   ppdbSubtitle: 'Penerimaan Peserta Didik Baru (PPDB) 2026/2027',
-  ppdbDesc: 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan.',
+  ppdbDesc: 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Lihat program khusus siswa baru kami dan isi formulir pendaftaran draf PPDB di samping untuk mendaftar.',
   ppdbSimulatorTitle: 'Simulator PPDB Cerdas',
   ppdbSimulatorSubtitle: 'Cek kelolosan & beasiswa instan',
   ppdbFormTitle: 'Formulir Pendaftaran Draf PPDB',
-  ppdbFormDesc: 'Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.',
+  ppdbFormDesc: 'Isi informasi dasar di bawah ini untuk mengunci kuota pendaftaran Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.',
   ppdbGrades: 'Kelas 1 MI (Baru), Kelas 2-3 (Pindahan), Kelas 4-5 (Pindahan)',
-  ppdbReassurance: 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa',
+  ppdbReassurance: 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim seragam gratis',
   ppdbYear: '2026',
   ppdbButtonText: 'Daftar PPDB 2026',
+  ppdbBannerTitle: '🎁 Program Khusus Murid Baru',
+  ppdbBannerSubtitle: 'Program unggulan dan kemudahan biaya pendaftaran madrasah',
+  ppdbBannerPrograms: 'Gratis Seragam Sekolah Lengkap (Seragam Utama & Olahraga)\nBebas Biaya Gedung / Pembangunan 100% bagi Anak Yatim Piatu\nKlaim Kuota Beasiswa Khusus Komite Madrasah\nSubsidi Buku Pelajaran & Alat Tulis untuk Wali Murid Kurang Mampu',
 
   // Customizable PPDB Scholarship defaults
   ppdbSch1Title: 'Beasiswa Utama Tahfidz Juz 30',

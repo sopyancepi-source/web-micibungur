@@ -76,6 +76,17 @@ export interface SchoolProfile {
   registeredAdmins?: string[];
   adminPin?: string;
   guruPin?: string;
+  principalEmail?: string;
+  principalPin?: string;
+
+  // Backup & Restore metadata
+  lastBackup?: string;
+  backupHistory?: Array<{
+    id: string;
+    date: string;
+    filename: string;
+    sizeKb: number;
+  }>;
 
   // New Flexible Homepage customization fields
   heroImage?: string;
@@ -177,6 +188,9 @@ export interface SchoolProfile {
   ppdbReassurance?: string;
   ppdbYear?: string;
   ppdbButtonText?: string;
+  ppdbBannerTitle?: string;
+  ppdbBannerSubtitle?: string;
+  ppdbBannerPrograms?: string;
 
   // Scholarship Tier 1 (Hafidz)
   ppdbSch1Title?: string;

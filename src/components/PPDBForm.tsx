@@ -1,11 +1,5 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Award, 
   Sparkles, 
   ArrowRight, 
   CheckCircle, 
@@ -14,10 +8,8 @@ import {
   Phone, 
   Mail, 
   Building2, 
-  HelpCircle,
-  Percent,
-  BadgeAlert,
-  Download
+  Download,
+  Gift
 } from 'lucide-react';
 import { PPDBSubmission, SchoolProfile } from '../types';
 
@@ -26,14 +18,10 @@ interface PPDBFormProps {
   schoolProfile?: SchoolProfile;
 }
 
-export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormProps) {
-  // Simulator State
-  const [gradeAverage, setGradeAverage] = useState<number>(85);
-  const [achievementLevel, setAchievementLevel] = useState<string>('tidak-ada');
-  const [isTahfidz, setIsTahfidz] = useState<string>('0'); // juz
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showPrediction, setShowPrediction] = useState(true);
-
+export default function PPDBForm({ 
+  onRegisterSubmit, 
+  schoolProfile 
+}: PPDBFormProps) {
   // Parse custom grades list
   const gradesList = schoolProfile?.ppdbGrades
     ? schoolProfile.ppdbGrades.split(',').map(s => s.trim()).filter(Boolean)
@@ -49,65 +37,24 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
     return gradesList[0] || 'Kelas 1 MI (Baru)';
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Calculate Scholarship tier
-  const getScholarshipEstimation = () => {
-    let title = "Jalur Umum (Reguler)";
-    let discount = "Terjangkau";
-    let benefit = "Akses fasilitas kelas nyaman, bimbingan akhlak harian, bimbingan shalat dhuha.";
-    let bg = "bg-slate-50 border-slate-200 text-slate-800";
-    let badgeColor = "bg-slate-200 text-slate-700";
-
-    const juzNum = parseInt(isTahfidz);
-
-    if (juzNum >= 10) {
-      title = schoolProfile?.ppdbSch1Title || "Beasiswa Utama Tahfidz Juz 30";
-      discount = schoolProfile?.ppdbSch1Discount || "Gratis Seragam & Gedung";
-      benefit = schoolProfile?.ppdbSch1Benefit || "Pemberian kitab suci gratis, pembinaan kelas tahfidz khusus dan keanggotaan klub cilik Al-Qur'an.";
-      bg = "bg-emerald-50 border-emerald-300 text-emerald-950";
-      badgeColor = "bg-emerald-500 text-white";
-    } else if (juzNum >= 3 || achievementLevel === 'nasional' || gradeAverage >= 95) {
-      title = schoolProfile?.ppdbSch2Title || "Beasiswa Anak Sholeh & Berprestasi";
-      discount = schoolProfile?.ppdbSch2Discount || "Diskon Gedung 75%";
-      benefit = schoolProfile?.ppdbSch2Benefit || "Akses peminjaman buku perpustakaan lengkap gratis, prioritas bimbingan perlombaan Porseni MI.";
-      bg = "bg-amber-50/70 border-amber-300 text-amber-950";
-      badgeColor = "bg-amber-500 text-white";
-    } else if (achievementLevel === 'provinsi' || gradeAverage >= 90) {
-      title = schoolProfile?.ppdbSch3Title || "Bantuan Afirmasi Komite Madrasah";
-      discount = schoolProfile?.ppdbSch3Discount || "Diskon Gedung 50%";
-      benefit = schoolProfile?.ppdbSch3Benefit || "Disubsidi komite wali murid bagi yang kurang mampu demi menjamin hak belajar anak.";
-      bg = "bg-blue-50 border-blue-200 text-blue-950";
-      badgeColor = "bg-blue-500 text-white";
-    } else if (achievementLevel === 'kabupaten' || gradeAverage >= 85) {
-      title = schoolProfile?.ppdbSch4Title || "Subsidi Khusus Saudara Kandung";
-      discount = schoolProfile?.ppdbSch4Discount || "Diskon Daftar 25%";
-      benefit = schoolProfile?.ppdbSch4Benefit || "Kemudahan pembayaran bagi wali murid yang memiliki lebih dari 1 anak bersekolah di MI Cibungur I.";
-      bg = "bg-purple-50 border-purple-200 text-purple-950";
-      badgeColor = "bg-purple-500 text-white";
+  // Handle grade fallback when the list changes
+  useEffect(() => {
+    if (gradesList.length > 0 && !gradesList.includes(gradeSelection)) {
+      setGradeSelection(gradesList[0]);
     }
+  }, [schoolProfile?.ppdbGrades]);
 
-    return { title, discount, benefit, bg, badgeColor };
-  };
-
-  // Estimate admission probability
-  const getAdmissionChance = () => {
-    const juzNum = parseInt(isTahfidz);
-    let chance = "Sangat Tinggi (95%+)";
-    let color = "text-emerald-600 font-bold";
-    let note = "Siswa memiliki modal kelayakan dasar yang sangat baik untuk langsung diterima setelah verifikasi berkas.";
-
-    if (juzNum >= 3 || achievementLevel === 'nasional' || gradeAverage >= 90) {
-      chance = "Jaminan Lolos Otomatis (99%)";
-      color = "text-amber-600 font-extrabold animate-pulse";
-      note = "Selamat! Calon siswa memenuhi kriteria pendaftaran Bebas Tes Akademik MI Cibungur I.";
-    } else if (gradeAverage < 80 && achievementLevel === 'tidak-ada' && juzNum === 0) {
-      chance = "Tinggi (85%)";
-      color = "text-emerald-600";
-      note = "Akan dibantu pembinaan minat bakat membaca & menulis oleh dewan guru kami.";
-    }
-
-    return { chance, color, note };
-  };
+  // Parse custom programs list
+  const programsList = schoolProfile?.ppdbBannerPrograms
+    ? schoolProfile.ppdbBannerPrograms.split('\n').map(p => p.trim()).filter(Boolean)
+    : [
+        'Gratis Seragam Sekolah Lengkap (Seragam Utama & Olahraga)',
+        'Bebas Biaya Gedung / Pembangunan 100% bagi Anak Yatim Piatu',
+        'Klaim Kuota Beasiswa Khusus Komite Madrasah',
+        'Subsidi Buku Pelajaran & Alat Tulis untuk Wali Murid Kurang Mampu'
+      ];
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -140,19 +87,16 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
       email,
       prevSchool,
       grade: gradeSelection,
-      notes: `Estimasi Beasiswa: ${getScholarshipEstimation().title} (${getScholarshipEstimation().discount}). Nilai Rata-rata: ${gradeAverage}. Hafalan: ${isTahfidz} Juz.`
+      notes: `Pendaftaran PPDB Mandiri Online. Program Peminatan: ${gradeSelection}. Sekolah Asal: ${prevSchool}.`
     });
 
     setIsSubmitted(true);
   };
 
-  const est = getScholarshipEstimation();
-  const chance = getAdmissionChance();
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12" id="ppdb-container">
+    <div className="mx-auto max-w-6xl px-4 py-12 animate-fade-in" id="ppdb-container">
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto mb-12">
+      <div className="text-center max-w-3xl mx-auto mb-8">
         <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
           {schoolProfile?.ppdbSubtitle || 'Penerimaan Peserta Didik Baru (PPDB) 2026/2027'}
         </span>
@@ -160,137 +104,69 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
           {schoolProfile?.ppdbTitle || 'Pendaftaran Siswa Baru MI Cibungur I'}
         </h2>
         <p className="text-slate-600 mt-4 text-sm sm:text-base leading-relaxed">
-          {schoolProfile?.ppdbDesc || 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Gunakan simulator sederhana di bawah untuk melihat perkiraan program beasiswa atau keringanan biaya yang berhak didapatkan.'}
+          {schoolProfile?.ppdbDesc || 'Membimbing putra-putri Anda tumbuh cerdas, sholeh, dan berakhlak mulia sejak dini. Lihat program khusus siswa baru kami dan isi formulir pendaftaran draf PPDB di samping untuk mendaftar.'}
         </p>
       </div>
 
+      {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: Scholarship Predictor (The Hook) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 p-6 shadow-xl shadow-slate-100/50">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl">
-              <Sparkles className="h-5 w-5" />
+        {/* Left: Customizable School Programs Banner */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-xl shadow-slate-100/50 text-left relative overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl opacity-70 -mr-10 -mt-10"></div>
+          
+          <div className="flex items-center gap-3.5 mb-6 relative z-10">
+            <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl shadow-sm shadow-emerald-100">
+              <Gift className="h-5.5 w-5.5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 leading-snug">
-                {schoolProfile?.ppdbSimulatorTitle || 'Simulator PPDB Cerdas'}
+              <h3 className="text-lg md:text-xl font-extrabold text-slate-900 leading-snug">
+                {schoolProfile?.ppdbBannerTitle || '🎁 Program Khusus Murid Baru'}
               </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                {schoolProfile?.ppdbSimulatorSubtitle || 'Cek kelolosan & beasiswa instan'}
+              <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                {schoolProfile?.ppdbBannerSubtitle || 'Program unggulan dan kemudahan biaya pendaftaran'}
               </p>
             </div>
           </div>
 
-          <div className="space-y-6">
-            {/* Input 1: Grade Average */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                  Nilai Rapor TK / Kesiapan Belajar Anak
-                </label>
-                <span className="text-base font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-md">
-                  {gradeAverage}
-                </span>
-              </div>
-              <input 
-                type="range" 
-                min="70" 
-                max="100" 
-                value={gradeAverage} 
-                onChange={(e) => setGradeAverage(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400 mt-1.5 font-medium">
-                <span>Cukup Mandiri</span>
-                <span>Siap Belajar</span>
-                <span>Sangat Berbakat</span>
-              </div>
-            </div>
-
-            {/* Input 2: Non-Academic Achievement */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Prestasi Non-Akademik (Seni/Sains/Olahraga)
-              </label>
-              <select 
-                value={achievementLevel} 
-                onChange={(e) => setAchievementLevel(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50 font-medium text-slate-700"
+          <div className="space-y-4 relative z-10">
+            {programsList.map((program, index) => (
+              <div 
+                key={index} 
+                className="flex items-start gap-3.5 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-100/30 text-left transition-all hover:-translate-y-0.5 hover:bg-emerald-50/60"
               >
-                <option value="tidak-ada">Belum Ada Prestasi Khusus</option>
-                <option value="kabupaten">Tingkat Kota / Kabupaten (Juara 1-3)</option>
-                <option value="provinsi">Tingkat Provinsi (Juara 1-3)</option>
-                <option value="nasional">Tingkat Nasional / Internasional (Juara 1-3)</option>
-              </select>
-            </div>
-
-            {/* Input 3: Tahfidz Qur'an */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Hafalan Surah Pendek (Juz Amma)
-              </label>
-              <select 
-                value={isTahfidz} 
-                onChange={(e) => setIsTahfidz(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50 font-medium text-slate-700"
-              >
-                <option value="0">Baru Mengenal Huruf Hijaiyah</option>
-                <option value="1">Hafal 5 - 10 Surah Pendek</option>
-                <option value="3">Hafal Sebagian Juz Amma (10+ Surah)</option>
-                <option value="10">Hafal Juz 30 Lengkap (Istimewa)</option>
-              </select>
-            </div>
-
-            {/* Output Result Dashboard */}
-            <div className={`p-5 rounded-2xl border transition-all duration-300 ${est.bg}`}>
-              <div className="flex items-start gap-3">
-                <div className={`p-1.5 rounded-lg ${est.badgeColor} mt-0.5 shrink-0`}>
-                  <Award className="h-4 w-4" />
+                <div className="p-1 rounded-lg bg-emerald-500 text-white shrink-0 mt-0.5 shadow-sm shadow-emerald-500/20">
+                  <Sparkles className="h-3.5 w-3.5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-slate-400 leading-none mb-1">
-                    ESTIMASI BEASISWA
-                  </p>
-                  <h4 className="font-extrabold text-base tracking-tight mb-1">
-                    {est.title}
+                  <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed">
+                    {program}
                   </h4>
-                  <div className="flex items-baseline gap-1 my-2">
-                    <span className="text-2xl font-black tracking-tight text-emerald-600">
-                      {est.discount}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-semibold">Uang SPP Pokok</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed mt-1">
-                    {est.benefit}
-                  </p>
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Admission Chance */}
-              <div className="mt-4 pt-4 border-t border-slate-100/60">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-semibold text-slate-500">Peluang Kelolosan Seleksi:</span>
-                  <span className={`text-xs font-extrabold ${chance.color}`}>{chance.chance}</span>
-                </div>
-                <p className="text-[11px] text-slate-500 leading-snug">
-                  {chance.note}
-                </p>
-              </div>
-            </div>
+          {/* Secure application badge */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3 text-slate-400">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+            <p className="text-[11px] font-semibold tracking-wider uppercase leading-none">
+              MI Cibungur I • Terakreditasi A
+            </p>
           </div>
         </div>
 
         {/* Right: Registration Draft Form */}
         <div className="lg:col-span-7">
           {!isSubmitted ? (
-            <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-xl shadow-slate-100/50">
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-xl shadow-slate-100/50 text-left">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <FileText className="h-5.5 w-5.5 text-emerald-600" />
                   {schoolProfile?.ppdbFormTitle || 'Formulir Pendaftaran Draf PPDB'}
                 </h3>
-                <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
-                  {schoolProfile?.ppdbFormDesc || 'Isi informasi dasar di bawah ini untuk mengunci kuota beasiswa Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.'}
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                  {schoolProfile?.ppdbFormDesc || 'Isi informasi dasar di bawah ini untuk mengunci kuota pendaftaran Anda. Tim humas dan penerimaan siswa baru akan segera memvalidasi dan memproses draf berkas ini.'}
                 </p>
               </div>
 
@@ -423,8 +299,8 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
                   <div className="p-1 rounded-full bg-emerald-100 text-emerald-700 h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">
                     <CheckCircle className="h-3.5 w-3.5" />
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-normal">
-                    {schoolProfile?.ppdbReassurance || 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim beasiswa'} <span className="font-semibold text-emerald-700">{est.title} ({est.discount})</span> jika hasil tes wawancara berkas sesuai.
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                    {schoolProfile?.ppdbReassurance || 'Dengan mendaftar draf ini, anak Anda diprioritaskan mendapatkan **kuota khusus wawancara** dan hak klaim seragam gratis'}
                   </p>
                 </div>
 
@@ -441,7 +317,7 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
           ) : (
             /* Success State */
             <div id="ppdb-receipt" className="bg-emerald-50/40 rounded-3xl border border-emerald-100 p-8 text-center shadow-lg flex flex-col items-center justify-center min-h-[450px]">
-              <div className="h-16 w-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-6">
+              <div className="h-16 w-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-6 animate-bounce">
                 <CheckCircle className="h-10 w-10" />
               </div>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -451,19 +327,19 @@ export default function PPDBForm({ onRegisterSubmit, schoolProfile }: PPDBFormPr
                 Nomor Tiket: PPDB-2026-{Math.floor(Math.random() * 9000 + 1000)}
               </p>
               
-              <div className="max-w-md mx-auto my-6 space-y-4 text-left bg-white border border-emerald-100/60 p-5 rounded-2xl">
+              <div className="max-w-md mx-auto my-6 space-y-4 text-left bg-white border border-emerald-100/60 p-5 rounded-2xl shadow-sm">
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Terima kasih Ibu/Bapak <strong className="text-slate-900">{parentName}</strong>, draf pendaftaran untuk putra-putri tercinta <strong className="text-slate-900">{studentName}</strong> telah kami terima di database penerimaan siswa baru.
                 </p>
-                <div className="border-t border-slate-100 pt-3 space-y-1.5 text-xs">
+                <div className="border-t border-slate-100 pt-3 space-y-2 text-xs">
                   <p className="text-slate-500 flex justify-between">
                     <span>Program Minat:</span> <strong className="text-slate-800">{gradeSelection}</strong>
                   </p>
                   <p className="text-slate-500 flex justify-between">
-                    <span>Estimasi Beasiswa:</span> <strong className="text-emerald-700">{est.title}</strong>
+                    <span>Sekolah Asal:</span> <strong className="text-slate-800">{prevSchool}</strong>
                   </p>
                   <p className="text-slate-500 flex justify-between">
-                    <span>Klaim Potongan:</span> <strong className="text-emerald-700 font-extrabold">{est.discount} SPP</strong>
+                    <span>Prioritas Hak Klaim:</span> <strong className="text-emerald-700 font-extrabold">Seragam Gratis & Buku Pelajaran</strong>
                   </p>
                 </div>
               </div>

@@ -135,6 +135,7 @@ export default function App() {
     };
   }, []);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Load state from LocalStorage or fall back to Initial Mock Data
   const [activities, setActivities] = useState<Activity[]>(() => {
@@ -380,14 +381,16 @@ export default function App() {
   // Securely load private/sensitive collections only when an administrator or staff member is logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
       if (user) {
         const cleanEmail = user.email?.trim().toLowerCase();
         
-        // 1. If Super Admin or Admin, load PPDB submissions
+        // 1. If Super Admin, Admin, or Kepala, load PPDB submissions
         const isSuperAdmin = cleanEmail === 'sopyancepi@gmail.com';
         const isRegisteredAdmin = schoolProfile?.registeredAdmins?.includes(cleanEmail || '') || false;
+        const isKepala = cleanEmail === (schoolProfile?.principalEmail?.trim().toLowerCase() || 'kepala@cibungur1.sch.id');
         
-        if (isSuperAdmin || isRegisteredAdmin) {
+        if (isSuperAdmin || isRegisteredAdmin || isKepala) {
           try {
             const submissionsCol = collection(db, 'submissions');
             const submissionsSnap = await getDocs(submissionsCol);
@@ -404,9 +407,9 @@ export default function App() {
           setSubmissions([]);
         }
 
-        // 2. If any staff member (Super Admin, Admin, or Guru), load teacher menus
+        // 2. If any staff member (Super Admin, Admin, Guru, or Kepala), load teacher menus
         const isGuru = cleanEmail === 'guru@cibungur1.sch.id';
-        if (isSuperAdmin || isRegisteredAdmin || isGuru) {
+        if (isSuperAdmin || isRegisteredAdmin || isGuru || isKepala) {
           try {
             const menusCol = collection(db, 'teacher_menus');
             const menusSnap = await getDocs(menusCol);
@@ -793,6 +796,147 @@ export default function App() {
         await setDoc(doc(db, 'school_profile', 'main_profile'), newProfile);
       } catch (err) {
         console.error('Error saving profile to Firebase:', err);
+      }
+    }
+  };
+
+  const handleRestoreData = async (backupData: any) => {
+    if (!backupData || !backupData.data) {
+      throw new Error('Format file backup tidak valid.');
+    }
+    const data = backupData.data;
+
+    // 1. Update School Profile
+    if (data.school_profile) {
+      setSchoolProfile(data.school_profile);
+      if (firebaseStatus === 'connected') {
+        await setDoc(doc(db, 'school_profile', 'main_profile'), data.school_profile);
+      }
+    }
+
+    // 2. Update Activities
+    if (Array.isArray(data.activities)) {
+      setActivities(data.activities);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'activities'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'activities', docSnap.id));
+        }
+        for (const act of data.activities) {
+          await setDoc(doc(db, 'activities', act.id), act);
+        }
+      }
+    }
+
+    // 3. Update Announcements
+    if (Array.isArray(data.announcements)) {
+      setAnnouncements(data.announcements);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'announcements'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'announcements', docSnap.id));
+        }
+        for (const ann of data.announcements) {
+          await setDoc(doc(db, 'announcements', ann.id), ann);
+        }
+      }
+    }
+
+    // 4. Update Teachers
+    if (Array.isArray(data.teachers)) {
+      setTeachers(data.teachers);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'teachers'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'teachers', docSnap.id));
+        }
+        for (const t of data.teachers) {
+          await setDoc(doc(db, 'teachers', t.id), t);
+        }
+      }
+    }
+
+    // 5. Update Testimonials
+    if (Array.isArray(data.testimonials)) {
+      setTestimonials(data.testimonials);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'testimonials'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'testimonials', docSnap.id));
+        }
+        for (const t of data.testimonials) {
+          await setDoc(doc(db, 'testimonials', t.id), t);
+        }
+      }
+    }
+
+    // 6. Update Facilities
+    if (Array.isArray(data.facilities)) {
+      setFacilities(data.facilities);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'facilities'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'facilities', docSnap.id));
+        }
+        for (const f of data.facilities) {
+          await setDoc(doc(db, 'facilities', f.id), f);
+        }
+      }
+    }
+
+    // 7. Update Historical Figures
+    if (Array.isArray(data.historical_figures)) {
+      setHistoricalFigures(data.historical_figures);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'historical_figures'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'historical_figures', docSnap.id));
+        }
+        for (const hf of data.historical_figures) {
+          await setDoc(doc(db, 'historical_figures', hf.id), hf);
+        }
+      }
+    }
+
+    // 8. Update Kabar Kelas
+    if (Array.isArray(data.kabar_kelas)) {
+      setKabarKelas(data.kabar_kelas);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'kabar_kelas'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'kabar_kelas', docSnap.id));
+        }
+        for (const k of data.kabar_kelas) {
+          await setDoc(doc(db, 'kabar_kelas', k.id), k);
+        }
+      }
+    }
+
+    // 9. Update Submissions
+    if (Array.isArray(data.submissions)) {
+      setSubmissions(data.submissions);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'submissions'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'submissions', docSnap.id));
+        }
+        for (const s of data.submissions) {
+          await setDoc(doc(db, 'submissions', s.id), s);
+        }
+      }
+    }
+
+    // 10. Update Teacher Menus
+    if (Array.isArray(data.teacher_menus)) {
+      setTeacherMenus(data.teacher_menus);
+      if (firebaseStatus === 'connected') {
+        const snap = await getDocs(collection(db, 'teacher_menus'));
+        for (const docSnap of snap.docs) {
+          await deleteDoc(doc(db, 'teacher_menus', docSnap.id));
+        }
+        for (const tm of data.teacher_menus) {
+          await setDoc(doc(db, 'teacher_menus', tm.id), tm);
+        }
       }
     }
   };
@@ -1462,7 +1606,10 @@ export default function App() {
 
         {/* VIEW 4: PENDAFTARAN PPDB */}
         {currentView === 'ppdb' && (
-          <PPDBForm onRegisterSubmit={handleRegisterSubmit} schoolProfile={schoolProfile} />
+          <PPDBForm 
+            onRegisterSubmit={handleRegisterSubmit} 
+            schoolProfile={schoolProfile} 
+          />
         )}
 
         {/* VIEW 5: ADMIN / PORTAL GURU */}
@@ -1496,6 +1643,7 @@ export default function App() {
             onDeleteFacility={handleDeleteFacility}
             schoolProfile={schoolProfile}
             onUpdateSchoolProfile={handleUpdateSchoolProfile}
+            onRestoreData={handleRestoreData}
             firebaseStatus={firebaseStatus}
             firebaseError={firebaseError}
             onBackToHome={() => setView('beranda')}
