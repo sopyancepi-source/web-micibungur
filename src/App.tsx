@@ -37,7 +37,8 @@ import TeacherProfile from './components/TeacherProfile';
 import SekilasMadrasah from './components/SekilasMadrasah';
 import KabarKelasView from './components/KabarKelasView';
 
-import { db } from './lib/firebase';
+import { db, auth } from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { 
   collection, 
   doc, 
@@ -141,10 +142,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_ACTIVITIES;
   });
 
-  const [submissions, setSubmissions] = useState<PPDBSubmission[]>(() => {
-    const saved = localStorage.getItem('school_ppdb_submissions');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [submissions, setSubmissions] = useState<PPDBSubmission[]>([]);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem('school_announcements');
@@ -187,10 +185,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_HISTORICAL_FIGURES;
   });
 
-  const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>(() => {
-    const saved = localStorage.getItem('school_teacher_menus');
-    return saved ? JSON.parse(saved) : INITIAL_TEACHER_MENUS;
-  });
+  const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>(INITIAL_TEACHER_MENUS);
 
   const [kabarKelas, setKabarKelas] = useState<KabarKelas[]>(() => {
     const saved = localStorage.getItem('school_kabar_kelas');
@@ -200,26 +195,35 @@ export default function App() {
   // Try to load and seed Firebase on Mount
   useEffect(() => {
     async function loadDataFromFirebase() {
+      let isAnyLoaded = false;
+      let errorOccurred = false;
+      let lastErrorMessage = '';
+
+      // 1. Fetch school profile
       try {
-        // 1. Fetch school profile
         const profileRef = doc(db, 'school_profile', 'main_profile');
         const profileSnap = await getDoc(profileRef);
-        let activeProfile = DEFAULT_SCHOOL_PROFILE;
         if (profileSnap.exists()) {
-          activeProfile = { ...DEFAULT_SCHOOL_PROFILE, ...profileSnap.data() } as SchoolProfile;
+          const activeProfile = { ...DEFAULT_SCHOOL_PROFILE, ...profileSnap.data() } as SchoolProfile;
           setSchoolProfile(activeProfile);
         } else {
           // Seed default profile to user's Firestore!
           await setDoc(profileRef, DEFAULT_SCHOOL_PROFILE);
           setSchoolProfile(DEFAULT_SCHOOL_PROFILE);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading school profile:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 2. Fetch activities
+      // 2. Fetch activities
+      try {
         const activitiesCol = collection(db, 'activities');
         const activitiesSnap = await getDocs(activitiesCol);
-        let activeActivities: Activity[] = [];
         if (!activitiesSnap.empty) {
-          activeActivities = activitiesSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Activity[];
+          const activeActivities = activitiesSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Activity[];
           setActivities(activeActivities);
         } else {
           // Seed activities
@@ -228,13 +232,19 @@ export default function App() {
           }
           setActivities(INITIAL_ACTIVITIES);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading activities:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 3. Fetch announcements
+      // 3. Fetch announcements
+      try {
         const announcementsCol = collection(db, 'announcements');
         const announcementsSnap = await getDocs(announcementsCol);
-        let activeAnnouncements: Announcement[] = [];
         if (!announcementsSnap.empty) {
-          activeAnnouncements = announcementsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Announcement[];
+          const activeAnnouncements = announcementsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Announcement[];
           setAnnouncements(activeAnnouncements);
         } else {
           // Seed announcements
@@ -243,23 +253,19 @@ export default function App() {
           }
           setAnnouncements(INITIAL_ANNOUNCEMENTS);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading announcements:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 4. Fetch submissions (PPDB)
-        const submissionsCol = collection(db, 'submissions');
-        const submissionsSnap = await getDocs(submissionsCol);
-        if (!submissionsSnap.empty) {
-          const activeSubmissions = submissionsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as PPDBSubmission[];
-          setSubmissions(activeSubmissions);
-        } else {
-          setSubmissions([]);
-        }
-
-        // 5. Fetch teachers
+      // 5. Fetch teachers
+      try {
         const teachersCol = collection(db, 'teachers');
         const teachersSnap = await getDocs(teachersCol);
-        let activeTeachers: Teacher[] = [];
         if (!teachersSnap.empty) {
-          activeTeachers = teachersSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Teacher[];
+          const activeTeachers = teachersSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Teacher[];
           setTeachers(activeTeachers);
         } else {
           // Seed teachers
@@ -268,13 +274,19 @@ export default function App() {
           }
           setTeachers(INITIAL_TEACHERS);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading teachers:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 6. Fetch testimonials
+      // 6. Fetch testimonials
+      try {
         const testimonialsCol = collection(db, 'testimonials');
         const testimonialsSnap = await getDocs(testimonialsCol);
-        let activeTestimonials: Testimonial[] = [];
         if (!testimonialsSnap.empty) {
-          activeTestimonials = testimonialsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Testimonial[];
+          const activeTestimonials = testimonialsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Testimonial[];
           setTestimonials(activeTestimonials);
         } else {
           // Seed testimonials
@@ -283,13 +295,19 @@ export default function App() {
           }
           setTestimonials(INITIAL_TESTIMONIALS);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading testimonials:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 7. Fetch facilities
+      // 7. Fetch facilities
+      try {
         const facilitiesCol = collection(db, 'facilities');
         const facilitiesSnap = await getDocs(facilitiesCol);
-        let activeFacilities: Facility[] = [];
         if (!facilitiesSnap.empty) {
-          activeFacilities = facilitiesSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Facility[];
+          const activeFacilities = facilitiesSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Facility[];
           setFacilities(activeFacilities);
         } else {
           // Seed facilities
@@ -298,13 +316,19 @@ export default function App() {
           }
           setFacilities(INITIAL_FACILITIES);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading facilities:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 8. Fetch historical figures (founders / retired teachers)
+      // 8. Fetch historical figures (founders / retired teachers)
+      try {
         const historicalCol = collection(db, 'historical_figures');
         const historicalSnap = await getDocs(historicalCol);
-        let activeHistorical: HistoricalFigure[] = [];
         if (!historicalSnap.empty) {
-          activeHistorical = historicalSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as HistoricalFigure[];
+          const activeHistorical = historicalSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as HistoricalFigure[];
           setHistoricalFigures(activeHistorical);
         } else {
           // Seed historical figures
@@ -313,28 +337,19 @@ export default function App() {
           }
           setHistoricalFigures(INITIAL_HISTORICAL_FIGURES);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading historical figures:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
-        // 9. Fetch teacher menus
-        const menusCol = collection(db, 'teacher_menus');
-        const menusSnap = await getDocs(menusCol);
-        let activeMenus: TeacherMenu[] = [];
-        if (!menusSnap.empty) {
-          activeMenus = menusSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as TeacherMenu[];
-          setTeacherMenus(activeMenus);
-        } else {
-          // Seed
-          for (const m of INITIAL_TEACHER_MENUS) {
-            await setDoc(doc(db, 'teacher_menus', m.id), m);
-          }
-          setTeacherMenus(INITIAL_TEACHER_MENUS);
-        }
-
-        // 10. Fetch kabar kelas
+      // 10. Fetch kabar kelas
+      try {
         const kabarCol = collection(db, 'kabar_kelas');
         const kabarSnap = await getDocs(kabarCol);
-        let activeKabar: KabarKelas[] = [];
         if (!kabarSnap.empty) {
-          activeKabar = kabarSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as KabarKelas[];
+          const activeKabar = kabarSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as KabarKelas[];
           setKabarKelas(activeKabar);
         } else {
           // Seed
@@ -343,18 +358,78 @@ export default function App() {
           }
           setKabarKelas(INITIAL_KABAR_KELAS);
         }
+        isAnyLoaded = true;
+      } catch (err: any) {
+        console.error('Error loading kabar kelas:', err);
+        errorOccurred = true;
+        lastErrorMessage = err.message;
+      }
 
+      if (isAnyLoaded) {
         setFirebaseStatus('connected');
         setFirebaseError(null);
-      } catch (err: any) {
-        console.error('Failed to load from Firebase:', err);
+      } else if (errorOccurred) {
         setFirebaseStatus('error');
-        setFirebaseError(err.message || 'Unknown permission/network error');
+        setFirebaseError(lastErrorMessage || 'Permission or network error');
       }
     }
 
     loadDataFromFirebase();
   }, []);
+
+  // Securely load private/sensitive collections only when an administrator or staff member is logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const cleanEmail = user.email?.trim().toLowerCase();
+        
+        // 1. If Super Admin or Admin, load PPDB submissions
+        const isSuperAdmin = cleanEmail === 'sopyancepi@gmail.com';
+        const isRegisteredAdmin = schoolProfile?.registeredAdmins?.includes(cleanEmail || '') || false;
+        
+        if (isSuperAdmin || isRegisteredAdmin) {
+          try {
+            const submissionsCol = collection(db, 'submissions');
+            const submissionsSnap = await getDocs(submissionsCol);
+            if (!submissionsSnap.empty) {
+              const activeSubmissions = submissionsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as PPDBSubmission[];
+              setSubmissions(activeSubmissions);
+            } else {
+              setSubmissions([]);
+            }
+          } catch (err) {
+            console.error('Error loading private PPDB submissions:', err);
+          }
+        } else {
+          setSubmissions([]);
+        }
+
+        // 2. If any staff member (Super Admin, Admin, or Guru), load teacher menus
+        const isGuru = cleanEmail === 'guru@cibungur1.sch.id';
+        if (isSuperAdmin || isRegisteredAdmin || isGuru) {
+          try {
+            const menusCol = collection(db, 'teacher_menus');
+            const menusSnap = await getDocs(menusCol);
+            if (!menusSnap.empty) {
+              const activeMenus = menusSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as TeacherMenu[];
+              setTeacherMenus(activeMenus);
+            } else {
+              setTeacherMenus(INITIAL_TEACHER_MENUS);
+            }
+          } catch (err) {
+            console.error('Error loading private teacher menus:', err);
+          }
+        } else {
+          setTeacherMenus(INITIAL_TEACHER_MENUS);
+        }
+      } else {
+        // Logged out! Immediately clear memory state for high security
+        setSubmissions([]);
+        setTeacherMenus(INITIAL_TEACHER_MENUS);
+      }
+    });
+    return () => unsubscribe();
+  }, [schoolProfile]);
 
   // Sync state to LocalStorage when changed (as safe local fallback)
   useEffect(() => {
@@ -364,10 +439,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_activities', JSON.stringify(activities));
   }, [activities]);
-
-  useEffect(() => {
-    localStorage.setItem('school_ppdb_submissions', JSON.stringify(submissions));
-  }, [submissions]);
 
   useEffect(() => {
     localStorage.setItem('school_announcements', JSON.stringify(announcements));
@@ -388,10 +459,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('school_historical_figures', JSON.stringify(historicalFigures));
   }, [historicalFigures]);
-
-  useEffect(() => {
-    localStorage.setItem('school_teacher_menus', JSON.stringify(teacherMenus));
-  }, [teacherMenus]);
 
   useEffect(() => {
     localStorage.setItem('school_kabar_kelas', JSON.stringify(kabarKelas));

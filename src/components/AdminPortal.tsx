@@ -5,6 +5,14 @@
 
 import React, { useState } from 'react';
 import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut 
+} from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { hashPin } from '../lib/crypto';
+import { 
   PlusCircle, 
   Users, 
   FileCheck, 
@@ -205,61 +213,146 @@ export default function AdminPortal({
   const [loginMode, setLoginMode] = useState<'guru' | 'admin'>('guru');
   const [inputEmail, setInputEmail] = useState('');
   const [inputPin, setInputPin] = useState('');
-  const [userRole, setUserRole] = useState<'guru' | 'admin' | null>(() => {
-    return sessionStorage.getItem('admin_role') as 'guru' | 'admin' | null;
-  });
+  const [userRole, setUserRole] = useState<'guru' | 'admin' | 'superadmin' | null>(null);
   const [pinError, setPinError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Synchronize state with Firebase Auth
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const cleanEmail = user.email?.trim().toLowerCase();
+        const currentRegisteredAdmins = schoolProfile?.registeredAdmins || ['sopyancepi@gmail.com'];
+        if (cleanEmail === 'sopyancepi@gmail.com') {
+          setUserRole('superadmin');
+        } else if (cleanEmail && currentRegisteredAdmins.includes(cleanEmail)) {
+          setUserRole('admin');
+        } else if (cleanEmail === 'guru@cibungur1.sch.id') {
+          setUserRole('guru');
+        } else {
+          setUserRole(null);
+        }
+      } else {
+        setUserRole(null);
+      }
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, [schoolProfile]);
 
   React.useEffect(() => {
-    if (userRole !== 'admin' && (activeTab === 'testimoni' || activeTab === 'profil' || activeTab === 'tokoh')) {
-      setActiveTab('kegiatan');
+    if (!userRole) return;
+    
+    if (userRole === 'guru') {
+      const allowedGuruTabs = ['dashboard', 'menu_guru', 'kabar_kelas'];
+      if (!allowedGuruTabs.includes(activeTab)) {
+        setActiveTab('dashboard');
+      }
+    } else if (userRole === 'admin') {
+      const allowedAdminTabs = ['dashboard', 'pendaftar', 'fasilitas', 'kegiatan', 'pengumuman', 'menu_guru', 'kabar_kelas'];
+      if (!allowedAdminTabs.includes(activeTab)) {
+        setActiveTab('dashboard');
+      }
     }
   }, [userRole, activeTab]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoggingIn) return;
+    
+    setPinError(null);
+    setIsLoggingIn(true);
+
     const cleanEmail = inputEmail.trim().toLowerCase();
-    const currentAdminPin = schoolProfile?.adminPin || '999888';
-    const currentGuruPin = schoolProfile?.guruPin || '123456';
+    const currentAdminPin = schoolProfile?.adminPin || '685f188e4f25af63603dc5b579b31090f459381a242bf7002c8a8e8ea322a4ef'; // default fallback is hash of 999888
+    const currentGuruPin = schoolProfile?.guruPin || '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'; // default fallback is hash of 123456
     const currentRegisteredAdmins = schoolProfile?.registeredAdmins || ['sopyancepi@gmail.com'];
 
-    if (loginMode === 'admin') {
-      if (!cleanEmail) {
-        setPinError('Email Administrator wajib diisi!');
-        return;
+    try {
+      const hashedInputPin = await hashPin(inputPin);
+
+      if (loginMode === 'admin') {
+        if (!cleanEmail) {
+          setPinError('Email Administrator wajib diisi!');
+          setIsLoggingIn(false);
+          return;
+        }
+        if (!currentRegisteredAdmins.includes(cleanEmail)) {
+          setPinError(`Email "${cleanEmail}" belum terdaftar sebagai Super Admin!`);
+          setIsLoggingIn(false);
+          return;
+        }
+        if (inputPin !== currentAdminPin && hashedInputPin !== currentAdminPin) {
+          setPinError('PIN Administrator salah!');
+          setIsLoggingIn(false);
+          return;
+        }
+
+        // Use a secure deterministic password for Firebase Auth based on admin credentials
+        const securePassword = `AdminSecretPassword_${cleanEmail}_Secure!`;
+        try {
+          await signInWithEmailAndPassword(auth, cleanEmail, securePassword);
+          setPinError(null);
+        } catch (signInErr: any) {
+          // Auto-register user in Firebase Auth if not found
+          if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
+            try {
+              await createUserWithEmailAndPassword(auth, cleanEmail, securePassword);
+              setPinError(null);
+            } catch (createErr: any) {
+              setPinError(`Gagal registrasi Firebase Admin: ${createErr.message}`);
+            }
+          } else {
+            setPinError(`Gagal login Firebase Admin: ${signInErr.message}`);
+          }
+        }
+      } else {
+        // Guru Login
+        if (inputPin !== currentGuruPin && hashedInputPin !== currentGuruPin) {
+          setPinError('PIN Guru/Staf salah!');
+          setIsLoggingIn(false);
+          return;
+        }
+
+        // Use a secure deterministic email and password for Guru
+        const guruEmail = 'guru@cibungur1.sch.id';
+        const securePassword = 'GuruCibungur1SecurePassword!';
+        try {
+          await signInWithEmailAndPassword(auth, guruEmail, securePassword);
+          setPinError(null);
+        } catch (signInErr: any) {
+          // Auto-register Guru in Firebase Auth if not found
+          if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
+            try {
+              await createUserWithEmailAndPassword(auth, guruEmail, securePassword);
+              setPinError(null);
+            } catch (createErr: any) {
+              setPinError(`Gagal registrasi Firebase Guru: ${createErr.message}`);
+            }
+          } else {
+            setPinError(`Gagal login Firebase Guru: ${signInErr.message}`);
+          }
+        }
       }
-      if (!currentRegisteredAdmins.includes(cleanEmail)) {
-        setPinError(`Email "${cleanEmail}" belum terdaftar sebagai Super Admin!`);
-        return;
-      }
-      if (inputPin !== currentAdminPin) {
-        setPinError('PIN Administrator salah!');
-        return;
-      }
-      // Successful Admin Login
-      setUserRole('admin');
-      sessionStorage.setItem('admin_role', 'admin');
-      setPinError(null);
-    } else {
-      // Guru Login
-      if (inputPin !== currentGuruPin) {
-        setPinError('PIN Guru/Staf salah!');
-        return;
-      }
-      // Successful Guru Login
-      setUserRole('guru');
-      sessionStorage.setItem('admin_role', 'guru');
-      setPinError(null);
+    } catch (err: any) {
+      setPinError(`Terjadi kesalahan sistem: ${err.message}`);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
-  const handleLogout = () => {
-    setUserRole(null);
-    sessionStorage.removeItem('admin_role');
-    setInputPin('');
-    setInputEmail('');
-    setPinError(null);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUserRole(null);
+      setInputPin('');
+      setInputEmail('');
+      setPinError(null);
+    } catch (err: any) {
+      console.error('Gagal logout Firebase:', err);
+    }
   };
 
   // Teacher Menu Form States
@@ -807,7 +900,7 @@ export default function AdminPortal({
 
   // School Profile Form State
   const [profileForm, setProfileForm] = useState<SchoolProfile>(() => {
-    return schoolProfile || {
+    const initProfile = schoolProfile || {
       schoolName: '',
       schoolSlogan: '',
       headline: '',
@@ -829,8 +922,13 @@ export default function AdminPortal({
       isStudentAccessActive: true,
       isParentAccessActive: true,
       registeredAdmins: ['sopyancepi@gmail.com'],
-      adminPin: '999888',
-      guruPin: '123456'
+      adminPin: '••••••',
+      guruPin: '••••••'
+    };
+    return {
+      ...initProfile,
+      adminPin: initProfile.adminPin ? '••••••' : '',
+      guruPin: initProfile.guruPin ? '••••••' : '',
     };
   });
   const [profSuccess, setProfSuccess] = useState(false);
@@ -839,14 +937,34 @@ export default function AdminPortal({
   // Sync profile form state if schoolProfile prop updates
   React.useEffect(() => {
     if (schoolProfile) {
-      setProfileForm(schoolProfile);
+      setProfileForm({
+        ...schoolProfile,
+        adminPin: schoolProfile.adminPin ? '••••••' : '',
+        guruPin: schoolProfile.guruPin ? '••••••' : '',
+      });
     }
   }, [schoolProfile]);
 
-  const handleUpdateProfileSubmit = (e: React.FormEvent) => {
+  const handleUpdateProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (onUpdateSchoolProfile) {
-      onUpdateSchoolProfile(profileForm);
+      // Determine what the final PINs should be
+      let finalAdminPin = schoolProfile?.adminPin || '685f188e4f25af63603dc5b579b31090f459381a242bf7002c8a8e8ea322a4ef'; // fallback hash of 999888
+      let finalGuruPin = schoolProfile?.guruPin || '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'; // fallback hash of 123456
+
+      // If the user entered a new value (not the mask '••••••'), hash it!
+      if (profileForm.adminPin && profileForm.adminPin !== '••••••') {
+        finalAdminPin = await hashPin(profileForm.adminPin);
+      }
+      if (profileForm.guruPin && profileForm.guruPin !== '••••••') {
+        finalGuruPin = await hashPin(profileForm.guruPin);
+      }
+
+      onUpdateSchoolProfile({
+        ...profileForm,
+        adminPin: finalAdminPin,
+        guruPin: finalGuruPin,
+      });
       setProfSuccess(true);
       setTimeout(() => setProfSuccess(false), 3000);
     }
@@ -910,6 +1028,15 @@ export default function AdminPortal({
     setTimeout(() => setAnnSuccess(false), 3000);
   };
 
+  if (isLoadingAuth) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center flex flex-col items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600 mb-4"></div>
+        <p className="text-sm text-slate-500 font-bold">Memvalidasi Sesi Keamanan...</p>
+      </div>
+    );
+  }
+
   if (!userRole) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
@@ -929,6 +1056,7 @@ export default function AdminPortal({
           <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mt-6">
             <button
               type="button"
+              disabled={isLoggingIn}
               onClick={() => {
                 setLoginMode('guru');
                 setPinError(null);
@@ -938,12 +1066,13 @@ export default function AdminPortal({
                 loginMode === 'guru'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+              } ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Guru / Staf
             </button>
             <button
               type="button"
+              disabled={isLoggingIn}
               onClick={() => {
                 setLoginMode('admin');
                 setPinError(null);
@@ -953,7 +1082,7 @@ export default function AdminPortal({
                 loginMode === 'admin'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+              } ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Super Admin
             </button>
@@ -968,12 +1097,13 @@ export default function AdminPortal({
                 <input
                   type="email"
                   value={inputEmail}
+                  disabled={isLoggingIn}
                   onChange={(e) => {
                     setInputEmail(e.target.value);
                     if (pinError) setPinError(null);
                   }}
                   placeholder="Contoh: sopyancepi@gmail.com"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all disabled:opacity-60"
                   required
                 />
               </div>
@@ -987,12 +1117,13 @@ export default function AdminPortal({
                 <input
                   type={showPin ? "text" : "password"}
                   value={inputPin}
+                  disabled={isLoggingIn}
                   onChange={(e) => {
                     setInputPin(e.target.value);
                     if (pinError) setPinError(null);
                   }}
                   placeholder={`Masukkan PIN ${loginMode === 'admin' ? 'Super Admin' : 'Guru'}`}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all font-mono tracking-widest text-center ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all font-mono tracking-widest text-center disabled:opacity-60 ${
                     pinError 
                       ? "border-rose-300 focus:ring-rose-500/20 focus:border-rose-500" 
                       : "border-slate-200 focus:ring-emerald-500/20 focus:border-emerald-500"
@@ -1002,8 +1133,9 @@ export default function AdminPortal({
                 />
                 <button
                   type="button"
+                  disabled={isLoggingIn}
                   onClick={() => setShowPin(!showPin)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer disabled:opacity-50"
                 >
                   {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -1017,9 +1149,21 @@ export default function AdminPortal({
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-slate-950 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-emerald-900 active:scale-[0.98] transition-all duration-200 shadow-md shadow-slate-950/10 cursor-pointer flex items-center justify-center gap-2"
+              disabled={isLoggingIn}
+              className={`w-full py-3.5 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                isLoggingIn 
+                  ? "bg-slate-700 cursor-not-allowed opacity-80" 
+                  : "bg-slate-950 hover:bg-emerald-900 active:scale-[0.98] shadow-slate-950/10"
+              }`}
             >
-              <span>Buka Kunci Akses Portal</span>
+              {isLoggingIn ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <span>Mengotentikasi...</span>
+                </>
+              ) : (
+                <span>Buka Kunci Akses Portal</span>
+              )}
             </button>
           </form>
 
@@ -1088,107 +1232,117 @@ export default function AdminPortal({
           </button>
 
           {/* PPDB Item */}
-          <button
-            onClick={() => { setActiveTab('pendaftar'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
-              activeTab === 'pendaftar'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Users className="h-4.5 w-4.5" />
-              <span>Kelola PPDB</span>
-            </div>
-            {submissions.length > 0 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-                activeTab === 'pendaftar' ? 'bg-white text-emerald-950' : 'bg-amber-500 text-white animate-pulse'
-              }`}>
-                {submissions.length}
-              </span>
-            )}
-          </button>
+          {(userRole === 'superadmin' || userRole === 'admin') && (
+            <button
+              onClick={() => { setActiveTab('pendaftar'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'pendaftar'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Users className="h-4.5 w-4.5" />
+                <span>Kelola PPDB</span>
+              </div>
+              {submissions.length > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                  activeTab === 'pendaftar' ? 'bg-white text-emerald-950' : 'bg-amber-500 text-white animate-pulse'
+                }`}>
+                  {submissions.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Guru Item */}
-          <button
-            onClick={() => { setActiveTab('guru'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
-              activeTab === 'guru'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-4.5 w-4.5" />
-              <span>Kelola Guru</span>
-            </div>
-            {teachers.length > 0 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'guru' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
-              }`}>
-                {teachers.length}
-              </span>
-            )}
-          </button>
+          {userRole === 'superadmin' && (
+            <button
+              onClick={() => { setActiveTab('guru'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'guru'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <GraduationCap className="h-4.5 w-4.5" />
+                <span>Kelola Guru</span>
+              </div>
+              {teachers.length > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'guru' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {teachers.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Fasilitas Item */}
-          <button
-            onClick={() => { setActiveTab('fasilitas'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
-              activeTab === 'fasilitas'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Building className="h-4.5 w-4.5" />
-              <span>Kelola Fasilitas</span>
-            </div>
-            {facilities.length > 0 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'fasilitas' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
-              }`}>
-                {facilities.length}
-              </span>
-            )}
-          </button>
+          {(userRole === 'superadmin' || userRole === 'admin') && (
+            <button
+              onClick={() => { setActiveTab('fasilitas'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'fasilitas'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Building className="h-4.5 w-4.5" />
+                <span>Kelola Fasilitas</span>
+              </div>
+              {facilities.length > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'fasilitas' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {facilities.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Kegiatan Item */}
-          <button
-            onClick={() => { setActiveTab('kegiatan'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
-              activeTab === 'kegiatan'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <PlusCircle className="h-4.5 w-4.5" />
-              <span>Kelola Berita/Kegiatan</span>
-            </div>
-            {activities.length > 0 && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'kegiatan' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
-              }`}>
-                {activities.length}
-              </span>
-            )}
-          </button>
+          {(userRole === 'superadmin' || userRole === 'admin') && (
+            <button
+              onClick={() => { setActiveTab('kegiatan'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'kegiatan'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <PlusCircle className="h-4.5 w-4.5" />
+                <span>Kelola Berita/Kegiatan</span>
+              </div>
+              {activities.length > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'kegiatan' ? 'bg-white text-emerald-950' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {activities.length}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Pengumuman Item */}
-          <button
-            onClick={() => { setActiveTab('pengumuman'); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
-              activeTab === 'pengumuman'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <FileCheck className="h-4.5 w-4.5" />
-              <span>Kelola Pengumuman</span>
-            </div>
-          </button>
+          {(userRole === 'superadmin' || userRole === 'admin') && (
+            <button
+              onClick={() => { setActiveTab('pengumuman'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
+                activeTab === 'pengumuman'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <FileCheck className="h-4.5 w-4.5" />
+                <span>Kelola Pengumuman</span>
+              </div>
+            </button>
+          )}
 
           {/* Administrasi Guru Item (Guru & Admin) */}
           <button
@@ -1235,7 +1389,7 @@ export default function AdminPortal({
           </button>
 
           {/* Tokoh & Pendiri Item (Super Admin only) */}
-          {userRole === 'admin' && (
+          {userRole === 'superadmin' && (
             <button
               onClick={() => { setActiveTab('tokoh'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
@@ -1252,7 +1406,7 @@ export default function AdminPortal({
           )}
 
           {/* Testimoni Item (Super Admin only) */}
-          {userRole === 'admin' && (
+          {userRole === 'superadmin' && (
             <button
               onClick={() => { setActiveTab('testimoni'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
@@ -1269,7 +1423,7 @@ export default function AdminPortal({
           )}
 
           {/* Profil Item (Super Admin only) */}
-          {userRole === 'admin' && (
+          {userRole === 'superadmin' && (
             <button
               onClick={() => { setActiveTab('profil'); setIsSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 text-left ${
@@ -1333,7 +1487,7 @@ export default function AdminPortal({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 rounded-full uppercase">
-              {userRole === 'admin' ? 'SUPER' : 'GURU'}
+              {userRole === 'superadmin' ? 'SUPER' : userRole === 'admin' ? 'ADMIN' : 'GURU'}
             </span>
           </div>
         </header>
@@ -1354,8 +1508,8 @@ export default function AdminPortal({
           <div className="flex items-center gap-4">
             {/* System Mode Tag */}
             <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${userRole === 'admin' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-              {userRole === 'admin' ? 'Super Administrator' : 'Guru / Staf'}
+              <span className={`h-2 w-2 rounded-full ${userRole === 'superadmin' ? 'bg-amber-500 animate-pulse' : userRole === 'admin' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+              {userRole === 'superadmin' ? 'Super Administrator' : userRole === 'admin' ? 'Administrator' : 'Guru / Staf'}
             </span>
 
             {/* Back to website button */}
@@ -1384,7 +1538,7 @@ export default function AdminPortal({
                   <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500 rounded-full blur-2xl opacity-20 transform translate-x-8 -translate-y-8" />
                   <div className="relative z-10">
                     <span className="bg-emerald-500/30 text-emerald-200 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-500/20 inline-block mb-3">
-                      {userRole === 'admin' ? '🛡️ Super Admin' : '📝 Guru & Staf'}
+                      {userRole === 'superadmin' ? '🛡️ Super Admin' : userRole === 'admin' ? '💼 Administrator' : '📝 Guru & Staf'}
                     </span>
                     <h3 className="text-xl md:text-2xl font-bold tracking-tight">
                       Assalamu'alaikum, Pengelola Madrasah!
@@ -1793,7 +1947,7 @@ export default function AdminPortal({
 
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[9px] text-slate-400">By: {act.author}</span>
-                        {userRole === 'admin' && (
+                        {(userRole === 'superadmin' || userRole === 'admin') && (
                           <button
                             onClick={() => onDeleteActivity(act.id)}
                             className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 cursor-pointer"
@@ -1909,7 +2063,7 @@ export default function AdminPortal({
                               >
                                 <Edit2 className="h-4.5 w-4.5" />
                               </button>
-                              {userRole === 'admin' && (
+                              {(userRole === 'superadmin' || userRole === 'admin') && (
                                 <button
                                   onClick={() => onDeleteSubmission(sub.id)}
                                   className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer"
@@ -2183,7 +2337,7 @@ export default function AdminPortal({
                         <h4 className="font-bold text-xs text-slate-800 leading-snug mb-1">{ann.title}</h4>
                         <p className="text-[10px] text-slate-500 leading-relaxed">{ann.content}</p>
                       </div>
-                      {userRole === 'admin' && onDeleteAnnouncement && (
+                      {(userRole === 'superadmin' || userRole === 'admin') && onDeleteAnnouncement && (
                         <button
                           type="button"
                           onClick={() => onDeleteAnnouncement(ann.id)}
@@ -3053,7 +3207,7 @@ export default function AdminPortal({
           </>
         )}
 
-        {activeTab === 'tokoh' && userRole === 'admin' && (
+        {activeTab === 'tokoh' && userRole === 'superadmin' && (
           <>
             {/* Header */}
             <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left mb-6">
@@ -3293,7 +3447,7 @@ export default function AdminPortal({
           </>
         )}
 
-        {activeTab === 'profil' && userRole === 'admin' && (
+        {activeTab === 'profil' && userRole === 'superadmin' && (
           <div className="lg:col-span-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm text-left">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
               <Sparkles className="h-5 w-5 text-emerald-600" />
@@ -4985,7 +5139,7 @@ export default function AdminPortal({
                       <label className="block text-xs font-bold text-slate-700 mb-1.5">PIN Guru & Staf</label>
                       <input
                         type="text"
-                        value={profileForm.guruPin || '123456'}
+                        value={profileForm.guruPin || ''}
                         onChange={(e) => setProfileForm({ ...profileForm, guruPin: e.target.value })}
                         className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-mono text-center tracking-widest"
                         maxLength={12}
@@ -4997,7 +5151,7 @@ export default function AdminPortal({
                       <label className="block text-xs font-bold text-slate-700 mb-1.5">PIN Super Admin</label>
                       <input
                         type="text"
-                        value={profileForm.adminPin || '999888'}
+                        value={profileForm.adminPin || ''}
                         onChange={(e) => setProfileForm({ ...profileForm, adminPin: e.target.value })}
                         className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none bg-slate-50/50 font-mono text-center tracking-widest"
                         maxLength={12}
@@ -5027,8 +5181,8 @@ export default function AdminPortal({
         {activeTab === 'menu_guru' && (
           <div className="lg:col-span-12 space-y-6 text-left">
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-              {/* Form Section (Super Admin only) */}
-              {userRole === 'admin' ? (
+              {/* Form Section (Super Admin and Admin) */}
+              {(userRole === 'superadmin' || userRole === 'admin') ? (
                 <div className="xl:col-span-4 bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm space-y-6 self-start">
                   <div>
                     <h3 className="text-base font-black text-slate-900 tracking-tight">
@@ -5155,9 +5309,9 @@ export default function AdminPortal({
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     Tautan Administrasi Guru ({teacherMenus.length})
                   </span>
-                  {userRole === 'admin' && (
+                  {(userRole === 'superadmin' || userRole === 'admin') && (
                     <span className="text-[10px] bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 font-bold">
-                      Mode Edit Super Admin Aktif
+                      Mode Edit Pengelola Aktif
                     </span>
                   )}
                 </div>
@@ -5200,7 +5354,7 @@ export default function AdminPortal({
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-                          {userRole === 'admin' ? (
+                          {(userRole === 'superadmin' || userRole === 'admin') ? (
                             <div className="flex gap-2">
                               <button
                                 type="button"

@@ -151,8 +151,8 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   isStudentAccessActive: true,
   isParentAccessActive: true,
   registeredAdmins: ['sopyancepi@gmail.com'],
-  adminPin: '999888',
-  guruPin: '123456',
+  adminPin: '685f188e4f25af63603dc5b579b31090f459381a242bf7002c8a8e8ea322a4ef', // Hash of 999888
+  guruPin: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', // Hash of 123456
 
   // New Flexible Homepage customization fields
   heroImage: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200',

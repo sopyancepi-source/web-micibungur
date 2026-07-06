@@ -1,8 +1,105 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is Super Admin
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'sopyancepi@gmail.com';
+    }
+
+    // Check if user is Admin
+    // Checks if registeredAdmins list in school_profile/main_profile has this email, and they are not sopyancepi
+    function isAdmin() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/school_profile/main_profile) &&
+        request.auth.token.email in get(/databases/$(database)/documents/school_profile/main_profile).data.registeredAdmins &&
+        request.auth.token.email != 'sopyancepi@gmail.com'
+      );
+    }
+
+    // Check if user is Super Admin or Admin
+    function isSuperAdminOrAdmin() {
+      return isSuperAdmin() || isAdmin();
+    }
+
+    // Check if user is Guru / Teacher
+    function isGuru() {
+      return isAuthenticated() && request.auth.token.email == 'guru@cibungur1.sch.id';
+    }
+
+    // Check if user is any staff/member of the school management
+    function isAnyStaff() {
+      return isSuperAdmin() || isAdmin() || isGuru();
+    }
+
+    // Global Safety Net
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // 1. School Profile
+    match /school_profile/{document} {
+      allow read: if true;
+      allow write: if isSuperAdmin(); // Only Super Admin can write/edit school settings, PINs, admins list
+    }
+
+    // 2. Activities (Kegiatan/Berita)
+    match /activities/{document} {
+      allow read: if true;
+      allow write: if isSuperAdminOrAdmin(); // Only Super Admin and Admin can write
+    }
+
+    // 3. Announcements (Pengumuman)
+    match /announcements/{document} {
+      allow read: if true;
+      allow write: if isSuperAdminOrAdmin(); // Only Super Admin and Admin can write
+    }
+
+    // 4. Submissions (PPDB)
+    match /submissions/{document} {
+      allow create: if true; // anyone can submit registrations
+      allow read, update, delete: if isSuperAdminOrAdmin(); // Only Super Admin and Admin can view/edit/delete (Guru cannot!)
+    }
+
+    // 5. Teachers (Guru)
+    match /teachers/{document} {
+      allow read: if true;
+      allow write: if isSuperAdmin(); // Only Super Admin can manage teacher list
+    }
+
+    // 6. Testimonials (Alumni & Testimoni)
+    match /testimonials/{document} {
+      allow read: if true;
+      allow write: if isSuperAdmin(); // Only Super Admin can manage testimonials
+    }
+
+    // 7. Facilities (Fasilitas)
+    match /facilities/{document} {
+      allow read: if true;
+      allow write: if isSuperAdminOrAdmin(); // Super Admin and Admin can manage facilities
+    }
+
+    // 8. Historical Figures (Pendiri & Tokoh)
+    match /historical_figures/{document} {
+      allow read: if true;
+      allow write: if isSuperAdmin(); // Only Super Admin can manage historical figures
+    }
+
+    // 9. Teacher Menus (Administrasi Guru)
+    match /teacher_menus/{document} {
+      allow read: if isAnyStaff(); // Only staff can read teacher menus
+      allow write: if isSuperAdminOrAdmin(); // Only Super Admin and Admin can write teacher menus
+    }
+
+    // 10. Kabar Kelas (Aktivitas Kelas)
+    match /kabar_kelas/{document} {
+      allow read: if true;
+      allow write: if isAnyStaff(); // Super Admin, Admin, and Guru can manage kabar kelas
     }
   }
 }
